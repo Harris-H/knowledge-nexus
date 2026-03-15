@@ -19,6 +19,7 @@ interface AppState {
   graphNodes: GraphNode[];
   graphEdges: GraphEdge[];
   graphLoading: boolean;
+  fetchFullGraph: (minCitations?: number) => Promise<void>;
   fetchSubgraph: (centerId: string, depth?: number) => Promise<void>;
 
   // Crawler
@@ -57,6 +58,16 @@ export const useStore = create<AppState>((set, get) => ({
   graphNodes: [],
   graphEdges: [],
   graphLoading: false,
+
+  fetchFullGraph: async (minCitations = 0) => {
+    set({ graphLoading: true });
+    try {
+      const { data } = await graphApi.full(minCitations, 200);
+      set({ graphNodes: data.nodes, graphEdges: data.edges });
+    } finally {
+      set({ graphLoading: false });
+    }
+  },
 
   fetchSubgraph: async (centerId: string, depth = 2) => {
     set({ graphLoading: true });

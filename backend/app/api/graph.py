@@ -9,6 +9,60 @@ from app.schemas.schemas import SubgraphResponse, GraphNode, GraphEdge, Relation
 router = APIRouter()
 
 
+@router.get("/full", response_model=SubgraphResponse)
+async def get_full_graph(
+    min_citations: int = Query(0, ge=0, description="最低引用量过滤"),
+    limit: int = Query(100, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取完整知识图谱（可按引用量过滤）"""
+    # 获取所有符合条件的论文
+    query = select(Paper).where(Paper.citation_count >= min_citations).order_by(
+        Paper.citation_count.desc()
+    ).limit(limit)
+    result = await db.execute(query)
+    papers = result.scalars().all()
+
+    paper_ids = {p.id for p in papers}
+    nodes = []
+    for p in papers:
+        nodes.append(GraphNode(
+            id=p.id,
+            type="paper",
+            label=p.title,
+            properties={
+                "year": p.year,
+                "citations": p.citation_count,
+                "impact_score": p.impact_score,
+                "venue": p.venue or "",
+            },
+        ))
+
+    # 获取这些论文之间的所有关系
+    edges = []
+    if paper_ids:
+        result = await db.execute(
+            select(Relation).where(
+                Relation.source_id.in_(paper_ids),
+                Relation.target_id.in_(paper_ids),
+                Relation.status == "confirmed",
+            )
+        )
+        for rel in result.scalars().all():
+            edges.append(GraphEdge(
+                id=rel.id,
+                source=rel.source_id,
+                target=rel.target_id,
+                type=rel.relation_type,
+                properties={
+                    "description": rel.description or "",
+                    "confidence": rel.confidence,
+                },
+            ))
+
+    return SubgraphResponse(nodes=nodes, edges=edges)
+
+
 @router.get("/subgraph", response_model=SubgraphResponse)
 async def get_subgraph(
     center: str = Query(..., description="中心节点 ID"),

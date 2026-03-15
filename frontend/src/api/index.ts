@@ -66,6 +66,8 @@ export interface Subgraph {
 }
 
 export const graphApi = {
+  full: (minCitations = 0, limit = 100) =>
+    api.get<Subgraph>("/graph/full", { params: { min_citations: minCitations, limit } }),
   subgraph: (center: string, depth = 1, limit = 50) =>
     api.get<Subgraph>("/graph/subgraph", { params: { center, depth, limit } }),
   addRelation: (data: Record<string, unknown>) =>
