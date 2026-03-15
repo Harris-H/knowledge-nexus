@@ -56,6 +56,7 @@ async def start_crawl(data: CrawlRequest, db: AsyncSession = Depends(get_db)):
         id=gen_id(),
         domain=data.domain,
         subdomain=data.subdomain,
+        source=data.source,
         year_from=data.year_from,
         year_to=data.year_to,
         min_citations=data.min_citations,

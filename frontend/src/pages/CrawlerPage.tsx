@@ -33,6 +33,12 @@ const SUBDOMAIN_OPTIONS = [
   { value: "systems", label: "系统" },
 ];
 
+const SOURCE_OPTIONS = [
+  { value: "openalex", label: "OpenAlex（推荐，快速免费）" },
+  { value: "semantic_scholar", label: "Semantic Scholar（需API Key）" },
+  { value: "arxiv", label: "arXiv（预印本）" },
+];
+
 const STATUS_MAP: Record<string, { color: string; label: string }> = {
   queued: { color: "default", label: "排队中" },
   running: { color: "processing", label: "运行中" },
@@ -88,6 +94,19 @@ export default function CrawlerPage() {
       },
     },
     { title: "领域", dataIndex: "domain", width: 120 },
+    {
+      title: "数据源",
+      dataIndex: "source",
+      width: 100,
+      render: (s: string) => {
+        const map: Record<string, string> = {
+          openalex: "OpenAlex",
+          semantic_scholar: "S2",
+          arxiv: "arXiv",
+        };
+        return map[s] || s;
+      },
+    },
     { title: "子领域", dataIndex: "subdomain", width: 100 },
     {
       title: "进度",
@@ -129,13 +148,20 @@ export default function CrawlerPage() {
               initialValues={{
                 domain: "computer_science",
                 subdomain: "deep_learning",
+                source: "openalex",
                 year_from: 2018,
                 year_to: 2026,
-                min_citations: 1000,
+                min_citations: 500,
                 max_papers: 20,
               }}
               style={{ flexWrap: "wrap", gap: 8 }}
             >
+              <Form.Item name="source" label="数据源">
+                <Select
+                  options={SOURCE_OPTIONS}
+                  style={{ width: 250 }}
+                />
+              </Form.Item>
               <Form.Item name="subdomain" label="子领域">
                 <Select
                   options={SUBDOMAIN_OPTIONS}

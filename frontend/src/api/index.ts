@@ -78,6 +78,7 @@ export interface CrawlTask {
   status: string;
   domain: string;
   subdomain?: string;
+  source: string;
   searched: number;
   candidates: number;
   imported: number;

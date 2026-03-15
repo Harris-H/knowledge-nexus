@@ -60,18 +60,20 @@ CS_SUBDOMAIN_QUERIES = {
 }
 
 
-def _create_crawler() -> BaseCrawler:
-    """根据配置创建爬虫实例。优先使用 OpenAlex（免费、快速），S2 作为后备。"""
-    source = getattr(settings, "CRAWLER_SOURCE", "openalex")
+def _create_crawler(source: str = "openalex") -> BaseCrawler:
+    """根据指定数据源创建爬虫实例。"""
     if source == "semantic_scholar":
         return SemanticScholarCrawler(
             api_key=settings.SEMANTIC_SCHOLAR_API_KEY,
             rate_limit=settings.CRAWLER_RATE_LIMIT,
         )
-    # 默认使用 OpenAlex：无严格速率限制，响应快
+    elif source == "arxiv":
+        from app.services.crawlers.arxiv_crawler import ArxivCrawler
+        return ArxivCrawler(rate_limit=0.5)
+    # 默认 OpenAlex：无严格速率限制，响应快
     return OpenAlexCrawler(
         email=getattr(settings, "OPENALEX_EMAIL", ""),
-        rate_limit=0.5,  # OpenAlex 允许快速请求
+        rate_limit=0.5,
     )
 
 
@@ -230,7 +232,7 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
         all_papers: list[PaperMeta] = []
         seen_ids: set[str] = set()
 
-        crawler = _create_crawler()
+        crawler = _create_crawler(source=task.source)
         _active_crawlers[task_id] = crawler
 
         async with crawler:

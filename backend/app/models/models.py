@@ -124,6 +124,7 @@ class CrawlTask(Base):
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=gen_id)
     domain: Mapped[str] = mapped_column(String(100))
     subdomain: Mapped[str | None] = mapped_column(String(100))
+    source: Mapped[str] = mapped_column(String(50), default="openalex")
     year_from: Mapped[int] = mapped_column(Integer)
     year_to: Mapped[int] = mapped_column(Integer)
     min_citations: Mapped[int] = mapped_column(Integer, default=100)

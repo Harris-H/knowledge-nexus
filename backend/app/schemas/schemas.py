@@ -89,7 +89,7 @@ class CrawlRequest(BaseModel):
     year_from: int = 2016
     year_to: int = 2026
     min_citations: int = 500
-    sources: list[str] = Field(default=["semantic_scholar"])
+    source: str = "openalex"  # openalex（默认，快速免费）/ semantic_scholar / arxiv
     max_papers: int = 100
     auto_download_pdf: bool = False
 
@@ -97,6 +97,8 @@ class CrawlTaskResponse(BaseModel):
     id: str
     status: str
     domain: str
+    subdomain: str | None = None
+    source: str = "openalex"
     searched: int = 0
     candidates: int = 0
     imported: int = 0
