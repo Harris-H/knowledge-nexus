@@ -45,7 +45,8 @@ class Paper(Base):
     citation_count: Mapped[int] = mapped_column(Integer, default=0)
     influential_citation_count: Mapped[int] = mapped_column(Integer, default=0)
     impact_score: Mapped[float] = mapped_column(Float, default=0.0)
-    key_contributions: Mapped[str | None] = mapped_column(Text)  # JSON 列表
+    key_contributions: Mapped[str | None] = mapped_column(Text)  # 短名称
+    summary: Mapped[str | None] = mapped_column(String(500))  # 一句话简介
     ai_status: Mapped[str] = mapped_column(String(20), default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(

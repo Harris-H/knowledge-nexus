@@ -48,9 +48,22 @@ export default function PapersPage() {
       title: "论文标题",
       dataIndex: "title",
       ellipsis: true,
-      render: (title: string, record) => (
-        <Tooltip title={title}>
-          <a onClick={() => setDetailPaper(record)}>{title}</a>
+      render: (_title: string, record) => (
+        <Tooltip title={record.summary || record.title}>
+          <a onClick={() => setDetailPaper(record)}>
+            {record.key_contributions ? (
+              <>
+                <strong>{record.key_contributions}</strong>
+                <span style={{ color: "#999", fontSize: 12, marginLeft: 6 }}>
+                  {record.title.length > 40
+                    ? record.title.slice(0, 38) + "..."
+                    : record.title}
+                </span>
+              </>
+            ) : (
+              record.title
+            )}
+          </a>
         </Tooltip>
       ),
     },
@@ -147,7 +160,21 @@ export default function PapersPage() {
       >
         {detailPaper && (
           <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label="标题">
+            {detailPaper.key_contributions && (
+              <Descriptions.Item label="核心工作">
+                <strong style={{ fontSize: 16 }}>
+                  {detailPaper.key_contributions}
+                </strong>
+              </Descriptions.Item>
+            )}
+            {detailPaper.summary && (
+              <Descriptions.Item label="一句话简介">
+                <span style={{ fontSize: 14, color: "#333", lineHeight: 1.6 }}>
+                  💡 {detailPaper.summary}
+                </span>
+              </Descriptions.Item>
+            )}
+            <Descriptions.Item label="论文标题">
               {detailPaper.title}
             </Descriptions.Item>
             <Descriptions.Item label="作者">

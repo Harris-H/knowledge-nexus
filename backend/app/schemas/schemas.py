@@ -40,6 +40,7 @@ class PaperResponse(BaseModel):
     influential_citation_count: int = 0
     impact_score: float = 0.0
     key_contributions: str | None = None
+    summary: str | None = None
     ai_status: str = "pending"
     pdf_path: str | None = None
     authors: list[str] = []

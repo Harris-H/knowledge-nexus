@@ -23,6 +23,7 @@ export interface Paper {
   influential_citation_count: number;
   impact_score: number;
   key_contributions?: string;
+  summary?: string;
   ai_status: string;
   pdf_path?: string;
   authors: string[];
