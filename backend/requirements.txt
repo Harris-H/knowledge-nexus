@@ -1,0 +1,45 @@
+# Backend requirements for Knowledge Nexus
+
+# Web framework
+fastapi==0.115.*
+uvicorn[standard]==0.34.*
+python-multipart==0.0.*
+
+# Database - PostgreSQL
+sqlalchemy[asyncio]==2.0.*
+asyncpg==0.30.*
+alembic==1.14.*
+
+# Database - Neo4j
+neo4j==5.27.*
+
+# Database - Qdrant
+qdrant-client==1.12.*
+
+# Search - Meilisearch
+meilisearch==0.33.*
+
+# Cache & Task Queue
+redis==5.2.*
+celery==5.4.*
+
+# AI / LLM
+openai==1.60.*
+langchain==0.3.*
+langchain-openai==0.3.*
+
+# Embedding
+sentence-transformers==3.4.*
+
+# PDF parsing
+PyMuPDF==1.25.*
+
+# Data validation
+pydantic==2.10.*
+pydantic-settings==2.7.*
+
+# Utilities
+httpx==0.28.*
+python-jose[cryptography]==3.3.*
+passlib[bcrypt]==1.7.*
+python-dotenv==1.0.*
