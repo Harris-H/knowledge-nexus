@@ -222,8 +222,8 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
                 # 预设子领域 → 使用预定义关键词
                 queries = CS_SUBDOMAIN_QUERIES[task.subdomain]
             else:
-                # 自定义文本输入 → 直接作为搜索关键词
-                queries = [task.subdomain.strip()]
+                # 自定义文本输入 → 直接作为搜索关键词（下划线转空格）
+                queries = [task.subdomain.strip().replace("_", " ")]
         else:
             for sub_queries in CS_SUBDOMAIN_QUERIES.values():
                 queries.extend(sub_queries)
@@ -234,7 +234,8 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
             await db.commit()
             return
 
-        papers_per_query = max(task.max_papers // len(queries), 5)
+        # 每个查询多取一些，最终混合排序取 top N（确保高引用论文不被低引用查询挤掉）
+        papers_per_query = max(task.max_papers, 20)
         all_papers: list[PaperMeta] = []
         seen_ids: set[str] = set()
 
