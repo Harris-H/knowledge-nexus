@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     STORAGE_PATH: Path = Path("./storage")
 
     # 爬虫配置
-    CRAWLER_RATE_LIMIT: float = 1.0  # 默认请求间隔（秒）
+    CRAWLER_RATE_LIMIT: float = 3.5  # 默认请求间隔（秒），无 API key 建议 >=3
     CRAWLER_MAX_RETRIES: int = 3
 
     @property
