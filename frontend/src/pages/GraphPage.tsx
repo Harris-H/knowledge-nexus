@@ -27,6 +27,18 @@ const RELATION_COLORS: Record<string, string> = {
   USED_BY: "#597ef7",
 };
 
+const RELATION_LABELS: Record<string, string> = {
+  CITES: "引用",
+  IMPROVES: "改进",
+  INSPIRED_BY: "受启发",
+  ANALOGOUS_TO: "类比",
+  BUILDS_ON: "基于",
+  RELATED_TO: "相关",
+  CONTRADICTS: "矛盾",
+  COMPETES_WITH: "竞争",
+  USED_BY: "被使用",
+};
+
 const CITATION_MARKS: Record<number, string> = {
   0: "全部",
   1000: "1K",
@@ -82,7 +94,7 @@ export default function KnowledgeGraph() {
         id: e.id,
         source: e.source,
         target: e.target,
-        label: e.type.replace(/_/g, " "),
+        label: RELATION_LABELS[e.type] || e.type.replace(/_/g, " "),
         type: e.type,
         description: (e.properties?.description as string) || "",
         lineColor: RELATION_COLORS[e.type] || "#ccc",
@@ -96,51 +108,87 @@ export default function KnowledgeGraph() {
       style: {
         label: "data(label)",
         "background-color": "#1677ff",
-        "background-opacity": 0.85,
+        "background-opacity": 0.9,
         color: "#222",
         "font-size": "10px",
         "font-weight": "bold" as const,
         "text-wrap": "wrap" as const,
-        "text-max-width": "140px",
+        "text-max-width": "150px",
         "text-valign": "bottom" as const,
-        "text-margin-y": 6,
+        "text-margin-y": 8,
         width: "data(nodeSize)",
         height: "data(nodeSize)",
         "border-width": 2,
-        "border-color": "#fff",
+        "border-color": "#e6f4ff",
         "overlay-opacity": 0,
+        "transition-property":
+          "background-color border-color border-width" as const,
+        "transition-duration": "0.2s" as unknown as number,
       },
     },
     {
       selector: "node:selected",
       style: {
-        "border-width": 3,
+        "border-width": 4,
         "border-color": "#ff4d4f",
         "background-color": "#ff7a45",
         "font-size": "12px",
+        "z-index": 999,
+      },
+    },
+    {
+      selector: "node.hover",
+      style: {
+        "border-width": 3,
+        "border-color": "#faad14",
+        "background-color": "#1890ff",
+        "z-index": 998,
+      },
+    },
+    {
+      selector: "node.dimmed",
+      style: {
+        "background-opacity": 0.25,
+        "text-opacity": 0.3,
+        "border-opacity": 0.2,
       },
     },
     {
       selector: "edge",
       style: {
-        width: 2,
+        width: 2.5,
         "line-color": "data(lineColor)",
         "target-arrow-color": "data(lineColor)",
         "target-arrow-shape": "triangle" as const,
         "curve-style": "bezier" as const,
         label: "data(label)",
-        "font-size": "8px",
-        color: "#888",
+        "font-size": "9px",
+        color: "#666",
         "text-rotation": "autorotate" as const,
-        "text-margin-y": -8,
-        opacity: 0.7,
+        "text-margin-y": -10,
+        opacity: 0.75,
+        "text-background-color": "#fff",
+        "text-background-opacity": 0.7,
       },
     },
     {
       selector: "edge:selected",
       style: {
-        width: 3,
+        width: 4,
         opacity: 1,
+      },
+    },
+    {
+      selector: "edge.hover",
+      style: {
+        width: 3.5,
+        opacity: 1,
+      },
+    },
+    {
+      selector: "edge.dimmed",
+      style: {
+        opacity: 0.12,
       },
     },
   ];
@@ -220,22 +268,59 @@ export default function KnowledgeGraph() {
             {
               name: layout,
               animate: true,
-              padding: 40,
-              nodeRepulsion: () => 8000,
-              idealEdgeLength: () => 120,
+              animationDuration: 500,
+              padding: 50,
+              nodeRepulsion: () => 12000,
+              idealEdgeLength: () => 150,
+              gravity: 0.25,
+              numIter: 1000,
             } as cytoscape.LayoutOptions
           }
           style={{ width: "100%", height: "calc(100% - 80px)" }}
           cy={(cy: Core) => {
             cyRef.current = cy;
+
+            // 点击节点
             cy.on("tap", "node", (evt: EventObject) => {
               setSelectedNode(evt.target.id());
             });
             cy.on("tap", (evt: EventObject) => {
-              if (evt.target === cy) setSelectedNode(null);
+              if (evt.target === cy) {
+                setSelectedNode(null);
+                // 清除所有高亮
+                cy.elements().removeClass("dimmed hover");
+              }
             });
             cy.on("dbltap", "node", (evt: EventObject) => {
               fetchSubgraph(evt.target.id());
+            });
+
+            // 鼠标悬停高亮
+            cy.on("mouseover", "node", (evt: EventObject) => {
+              const node = evt.target;
+              const neighborhood = node.closedNeighborhood();
+              cy.elements().addClass("dimmed");
+              neighborhood.removeClass("dimmed");
+              node.addClass("hover");
+              neighborhood.edges().addClass("hover");
+            });
+            cy.on("mouseout", "node", () => {
+              cy.elements().removeClass("dimmed hover");
+            });
+
+            // 边悬停显示描述
+            cy.on("mouseover", "edge", (evt: EventObject) => {
+              const edge = evt.target;
+              edge.addClass("hover");
+              const desc = edge.data("description");
+              if (desc) {
+                edge.style("label", desc.length > 30 ? desc.slice(0, 28) + "..." : desc);
+              }
+            });
+            cy.on("mouseout", "edge", (evt: EventObject) => {
+              const edge = evt.target;
+              edge.removeClass("hover");
+              edge.style("label", edge.data("label"));
             });
           }}
         />
@@ -267,7 +352,7 @@ export default function KnowledgeGraph() {
                 borderRadius: 2,
               }}
             />
-            <span>{type.replace(/_/g, " ")}</span>
+            <span>{RELATION_LABELS[type] || type}</span>
           </div>
         ))}
       </div>
@@ -291,10 +376,10 @@ export default function KnowledgeGraph() {
               position: "absolute",
               bottom: 16,
               right: 16,
-              width: 360,
-              maxHeight: 320,
+              width: 380,
+              maxHeight: 400,
               overflow: "auto",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
               borderRadius: 8,
             }}
             extra={<a onClick={() => setSelectedNode(null)}>关闭</a>}
@@ -318,21 +403,42 @@ export default function KnowledgeGraph() {
                     edge.source === selectedNode ? edge.target : edge.source;
                   const otherNode = graphNodes.find((n) => n.id === otherId);
                   const direction = edge.source === selectedNode ? "→" : "←";
+                  const desc = (edge.properties?.description as string) || "";
                   return (
                     <div
                       key={edge.id}
-                      style={{ fontSize: 11, color: "#555", marginBottom: 2 }}
+                      style={{
+                        fontSize: 11,
+                        color: "#555",
+                        marginBottom: 6,
+                        padding: "3px 0",
+                        borderBottom: "1px dashed #f0f0f0",
+                      }}
                     >
-                      <Tag
-                        color={RELATION_COLORS[edge.type] || "#ccc"}
-                        style={{ fontSize: 10 }}
-                      >
-                        {edge.type.replace(/_/g, " ")}
-                      </Tag>
-                      {direction}{" "}
-                      {otherNode
-                        ? (otherNode.label || "").slice(0, 40)
-                        : otherId}
+                      <div>
+                        <Tag
+                          color={RELATION_COLORS[edge.type] || "#ccc"}
+                          style={{ fontSize: 10 }}
+                        >
+                          {RELATION_LABELS[edge.type] || edge.type}
+                        </Tag>
+                        {direction}{" "}
+                        {otherNode
+                          ? (otherNode.label || "").slice(0, 40)
+                          : otherId}
+                      </div>
+                      {desc && (
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: "#999",
+                            marginTop: 2,
+                            paddingLeft: 8,
+                          }}
+                        >
+                          💡 {desc}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
