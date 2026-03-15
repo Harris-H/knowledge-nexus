@@ -1,6 +1,6 @@
 # Knowledge Nexus — Cross-Domain Knowledge Association Engine
 
-[English](#-vision) | [中文](#-项目愿景)
+[English](#-vision) | [中文](README_zh.md)
 
 > Discover deep connections between seemingly unrelated concepts across domains. Weave isolated knowledge into an interconnected intelligence network, powered by AI.
 
@@ -63,28 +63,68 @@ Human knowledge is scattered across disciplines, yet many concepts are deeply co
 
 ## 📐 Architecture
 
+```mermaid
+graph TB
+    subgraph Frontend["🖥️ Frontend — React + TypeScript"]
+        direction LR
+        GV["📊 Graph View<br/><i>Cytoscape.js</i>"]
+        KM["📚 Knowledge<br/>Management"]
+        AI["🤖 AI Discovery<br/><i>3-Tab Panel</i>"]
+        CR["🕷️ Crawler<br/>Dashboard"]
+    end
+
+    subgraph Backend["⚙️ Backend — FastAPI + Python"]
+        direction LR
+        PS["📄 Paper<br/>Service"]
+        GS["🕸️ Graph<br/>Service"]
+        AE["🧠 AI Engine<br/><i>LLM Analyzer</i>"]
+        CS["🔍 Crawler<br/>Service"]
+    end
+
+    subgraph Storage["💾 Data Layer"]
+        direction LR
+        DB[("🗄️ SQLite / PostgreSQL<br/><i>Papers · Nodes · Relations</i>")]
+        FS["📁 File Storage<br/><i>PDF Papers</i>"]
+    end
+
+    subgraph External["🌐 External Services"]
+        direction LR
+        LLM["🤖 LLM API<br/><i>Doubao · DeepSeek<br/>OpenAI · Ollama</i>"]
+        OA["📖 OpenAlex<br/><i>Paper Metadata</i>"]
+        SS["🔬 Semantic Scholar<br/><i>Citations</i>"]
+    end
+
+    Frontend -->|"REST API<br/>(Vite Proxy)"| Backend
+    PS --> DB
+    PS --> FS
+    GS --> DB
+    AE --> LLM
+    AE --> DB
+    CS --> OA
+    CS --> SS
+    CS --> DB
+
+    style Frontend fill:#e6f3ff,stroke:#4a90d9,stroke-width:2px
+    style Backend fill:#f0f7e6,stroke:#5cb85c,stroke-width:2px
+    style Storage fill:#fff8e6,stroke:#f0ad4e,stroke-width:2px
+    style External fill:#fce6f0,stroke:#d9534f,stroke-width:2px
 ```
-┌───────────────────────────────────────────────────────┐
-│                  Frontend (React + TS)                  │
-│  ┌────────────┐ ┌─────────────┐ ┌──────────────────┐  │
-│  │ Graph View  │ │ Knowledge   │ │  AI Discovery    │  │
-│  │ (Cytoscape) │ │ Management  │ │  (3-Tab Panel)   │  │
-│  └────────────┘ └─────────────┘ └──────────────────┘  │
-└───────────────────────┬───────────────────────────────┘
-                        │ REST API (Proxy via Vite)
-┌───────────────────────┴───────────────────────────────┐
-│                  Backend (FastAPI)                      │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
-│  │ Papers   │ │ Graph    │ │ AI Engine│ │ Crawler  │ │
-│  │ Service  │ │ Service  │ │ (LLM)   │ │ Service  │ │
-│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ │
-└───────┼────────────┼────────────┼────────────┼────────┘
-        │            │            │            │
-   ┌────┴────┐  ┌────┴────┐ ┌────┴────┐ ┌────┴────────┐
-   │ SQLite  │  │ SQLite  │ │ LLM API │ │ OpenAlex /  │
-   │ (Data)  │  │(Relations│ │(Doubao/ │ │ Semantic    │
-   │         │  │ & Graph)│ │DeepSeek)│ │ Scholar     │
-   └─────────┘  └─────────┘ └─────────┘ └─────────────┘
+
+### Data Flow
+
+```mermaid
+flowchart LR
+    A["📥 Import<br/><i>Scripts · Crawler · Manual</i>"] --> B["🗄️ Knowledge Base<br/><i>Nodes + Papers + Relations</i>"]
+    B --> C["🕸️ Graph Visualization<br/><i>Cytoscape.js</i>"]
+    B --> D["🧠 AI Discovery Engine<br/><i>LLM Analysis</i>"]
+    D -->|"New associations<br/>& hypotheses"| B
+    D --> E["💡 New Knowledge<br/><i>Cross-domain insights</i>"]
+
+    style A fill:#e8f5e9,stroke:#4caf50
+    style B fill:#e3f2fd,stroke:#2196f3
+    style C fill:#fff3e0,stroke:#ff9800
+    style D fill:#fce4ec,stroke:#e91e63
+    style E fill:#f3e5f5,stroke:#9c27b0
 ```
 
 ## 🛠️ Tech Stack
@@ -167,7 +207,8 @@ Visit `http://localhost:3001` (or the port shown in terminal).
 
 ```
 knowledge-nexus/
-├── README.md                    # This file
+├── README.md                    # English documentation
+├── README_zh.md                 # 中文文档
 ├── backend/                     # FastAPI backend
 │   ├── app/
 │   │   ├── api/                 # API routes (papers, graph, ai, crawler)
@@ -254,97 +295,5 @@ LLM_MODEL=doubao-seed-2-0-lite-260215
 - [ ] Plugin system for custom domain adapters
 
 ## 📄 License
-
-MIT
-
----
-
----
-
-# 中文文档
-
-## 🎯 项目愿景
-
-人类知识分散在不同领域中，但本质上许多概念跨域相通：
-
-- 生物学的 **自然选择** ↔ 计算机的 **遗传算法**
-- 物理学的 **退火过程** ↔ 优化领域的 **模拟退火**
-- 神经科学的 **神经网络** ↔ 深度学习的 **人工神经网络**
-- 经济学的 **博弈论** ↔ 多智能体的 **强化学习**
-
-**Knowledge Nexus** 旨在：
-1. **构建领域内知识图谱** — 梳理单个领域中各 SOTA 工作之间的引用、继承、改进关系
-2. **发现跨领域关联** — 利用 AI 识别不同领域知识之间的结构相似性与概念迁移
-3. **生成新知识假说** — 基于已有关联模式，推断潜在的跨域启发与创新方向
-
-## ✨ 核心功能
-
-### 📚 知识库管理
-- 多类型知识节点：论文、概念、现象、定理、方法、原理
-- 论文元数据管理，支持 PDF 存储、DOI、引用量
-- 多领域支持：计算机科学、语音AI、生物学、物理学、数学等 13+ 领域
-- 支持脚本批量导入和爬虫自动采集
-
-### 🕸️ 交互式知识图谱
-- 基于 **Cytoscape.js** 的图谱可视化，节点按领域着色
-- 关键词搜索、领域过滤、跨域模式切换
-- 缩放、拖拽、点击聚焦等交互操作
-- 多种关系类型：引用、继承、改进、类比、启发、组成、使能
-
-### 🤖 AI 发现引擎（LLM 驱动）
-- **跨域发现** — AI 分析知识节点，发现不同领域间的隐藏关联
-- **配对分析** — 深入分析任意两个节点之间的关系
-- **知识推导** — 选择多个节点，让 AI 推导出新的见解和假说
-- 支持领域过滤，聚焦特定领域的发现
-- 三级模糊匹配策略，确保节点识别的鲁棒性
-- 兼容任何 OpenAI 格式的 LLM API（豆包、DeepSeek、OpenAI、Ollama）
-
-### 🕷️ 智能论文爬取
-- 多数据源爬取：OpenAlex、Semantic Scholar、arXiv
-- 基于引用量、顶会/顶刊、SOTA 记录的质量评分
-- 自动下载 Open Access 论文 PDF
-- 限流、断点续爬、去重
-
-## 🚀 快速开始
-
-### 环境要求
-- Python 3.11+
-- Node.js 18+
-- LLM API Key（豆包/DeepSeek/OpenAI 或本地 Ollama）
-
-### 安装步骤
-
-```bash
-# 1. 克隆仓库
-git clone https://github.com/Harris-H/knowledge-nexus.git
-cd knowledge-nexus
-
-# 2. 后端设置
-cd backend
-python -m venv .venv
-.venv\Scripts\activate          # Windows
-# source .venv/bin/activate     # macOS/Linux
-pip install -r requirements.txt
-cp .env.example .env
-# 编辑 .env，填入你的 LLM_API_KEY
-uvicorn app.main:app --host 0.0.0.0 --port 8082 --reload
-
-# 3. 前端设置（新终端）
-cd frontend
-npm install
-npm run dev
-
-# 4.（可选）初始化知识库
-cd scripts
-python add_cross_domain_knowledge.py
-python add_cs_knowledge_v3.py
-python add_speech_ai_knowledge.py
-```
-
-### 打开浏览器
-
-访问终端显示的地址（默认 `http://localhost:3001`）。
-
-## 📄 开源协议
 
 MIT
