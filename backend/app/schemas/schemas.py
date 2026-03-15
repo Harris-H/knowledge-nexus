@@ -130,3 +130,34 @@ class SearchResult(BaseModel):
 class SearchResponse(BaseModel):
     results: list[SearchResult]
     total: int
+
+
+# ---- KnowledgeNode ----
+
+class KnowledgeNodeCreate(BaseModel):
+    name: str
+    node_type: str  # phenomenon / theorem / law / method / concept / principle / process / structure
+    domain: str  # biology / physics / mathematics / computer_science / chemistry / ...
+    description: str | None = None
+    summary: str | None = None
+    source_info: str | None = None
+    year: int | None = None
+    tags: str | None = None
+
+class KnowledgeNodeResponse(BaseModel):
+    id: str
+    name: str
+    node_type: str
+    domain: str
+    description: str | None = None
+    summary: str | None = None
+    source_info: str | None = None
+    year: int | None = None
+    tags: str | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+class KnowledgeNodeList(BaseModel):
+    items: list[KnowledgeNodeResponse]
+    total: int

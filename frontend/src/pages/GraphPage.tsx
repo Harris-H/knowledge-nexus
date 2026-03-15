@@ -19,24 +19,53 @@ const RELATION_COLORS: Record<string, string> = {
   CITES: "#a0a0a0",
   IMPROVES: "#52c41a",
   INSPIRED_BY: "#faad14",
+  INSPIRES: "#fa8c16",
   ANALOGOUS_TO: "#1677ff",
   BUILDS_ON: "#722ed1",
   RELATED_TO: "#13c2c2",
   CONTRADICTS: "#ff4d4f",
   COMPETES_WITH: "#eb2f96",
   USED_BY: "#597ef7",
+  REVIEWS: "#9254de",
 };
 
 const RELATION_LABELS: Record<string, string> = {
   CITES: "引用",
   IMPROVES: "改进",
   INSPIRED_BY: "受启发",
+  INSPIRES: "启发了",
   ANALOGOUS_TO: "类比",
   BUILDS_ON: "基于",
   RELATED_TO: "相关",
   CONTRADICTS: "矛盾",
   COMPETES_WITH: "竞争",
   USED_BY: "被使用",
+  REVIEWS: "综述",
+};
+
+// 不同类型的知识节点颜色
+const NODE_TYPE_COLORS: Record<string, string> = {
+  paper: "#1677ff",
+  phenomenon: "#52c41a",  // 绿色 — 自然现象
+  theorem: "#faad14",     // 金色 — 定理
+  law: "#ff4d4f",         // 红色 — 定律
+  method: "#722ed1",      // 紫色 — 方法
+  concept: "#13c2c2",     // 青色 — 概念
+  principle: "#eb2f96",   // 粉色 — 原理
+  process: "#fa8c16",     // 橙色 — 过程
+  structure: "#597ef7",   // 蓝紫 — 结构
+};
+
+const NODE_TYPE_LABELS: Record<string, string> = {
+  paper: "📄 论文",
+  phenomenon: "🌿 现象",
+  theorem: "📐 定理",
+  law: "⚖️ 定律",
+  method: "🔧 方法",
+  concept: "💡 概念",
+  principle: "🎯 原理",
+  process: "🔄 过程",
+  structure: "🏗️ 结构",
 };
 
 const CITATION_MARKS: Record<number, string> = {
@@ -64,12 +93,20 @@ export default function KnowledgeGraph() {
     loadGraph();
   }, [loadGraph]);
 
-  // 节点大小根据引用量缩放
-  const getNodeSize = (citations: number) => {
+  // 节点大小根据引用量缩放（论文），知识节点固定大小
+  const getNodeSize = (node: { type: string; properties?: Record<string, unknown> }) => {
+    if (node.type !== "paper") return 32; // 知识节点固定大小
+    const citations = (node.properties?.citations as number) || 0;
     if (citations >= 30000) return 55;
     if (citations >= 15000) return 45;
     if (citations >= 5000) return 35;
     return 28;
+  };
+
+  // 节点形状：论文=圆形，知识节点=菱形
+  const getNodeShape = (type: string) => {
+    if (type === "paper") return "ellipse";
+    return "diamond";
   };
 
   // 转换为 Cytoscape 格式
@@ -83,7 +120,12 @@ export default function KnowledgeGraph() {
         citations: (n.properties?.citations as number) || 0,
         year: (n.properties?.year as number) || 0,
         venue: (n.properties?.venue as string) || "",
-        nodeSize: getNodeSize((n.properties?.citations as number) || 0),
+        domain: (n.properties?.domain as string) || "",
+        summary: (n.properties?.summary as string) || "",
+        nodeType: n.type,
+        nodeSize: getNodeSize(n),
+        nodeColor: NODE_TYPE_COLORS[n.type] || "#1677ff",
+        nodeShape: getNodeShape(n.type),
       },
     })),
     ...graphEdges.map((e) => ({
@@ -104,8 +146,9 @@ export default function KnowledgeGraph() {
       selector: "node",
       style: {
         label: "data(label)",
-        "background-color": "#1677ff",
+        "background-color": "data(nodeColor)",
         "background-opacity": 0.9,
+        shape: "data(nodeShape)" as unknown as cytoscape.Css.NodeShape,
         color: "#222",
         "font-size": "10px",
         "font-weight": "bold" as const,
@@ -255,7 +298,7 @@ export default function KnowledgeGraph() {
         </Space>
 
         <Text type="secondary" style={{ marginLeft: "auto" }}>
-          {graphNodes.length} 节点 · {graphEdges.length} 边
+          {graphNodes.filter(n => n.type === "paper").length} 论文 · {graphNodes.filter(n => n.type !== "paper").length} 知识节点 · {graphEdges.length} 关系
         </Text>
       </div>
 
@@ -344,8 +387,28 @@ export default function KnowledgeGraph() {
           borderRadius: 6,
           boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
           fontSize: 12,
+          maxHeight: "calc(100% - 160px)",
+          overflowY: "auto",
         }}
       >
+        <Text strong style={{ display: "block", marginBottom: 4 }}>
+          节点类型
+        </Text>
+        {Object.entries(NODE_TYPE_COLORS).map(([type, color]) => (
+          <div key={type} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+            <div
+              style={{
+                width: type === "paper" ? 10 : 10,
+                height: 10,
+                background: color,
+                borderRadius: type === "paper" ? "50%" : 2,
+                transform: type === "paper" ? "none" : "rotate(45deg)",
+              }}
+            />
+            <span>{NODE_TYPE_LABELS[type] || type}</span>
+          </div>
+        ))}
+        <div style={{ borderTop: "1px solid #f0f0f0", margin: "6px 0" }} />
         <Text strong style={{ display: "block", marginBottom: 4 }}>
           关系类型
         </Text>
@@ -368,10 +431,15 @@ export default function KnowledgeGraph() {
       {selectedNode && (() => {
         const node = graphNodes.find((n) => n.id === selectedNode);
         if (!node) return null;
+        const isPaper = node.type === "paper";
         const citations = (node.properties?.citations as number) || 0;
         const year = (node.properties?.year as number) || 0;
         const venue = (node.properties?.venue as string) || "";
         const fullTitle = (node.properties?.full_title as string) || node.label || "";
+        const domain = (node.properties?.domain as string) || "";
+        const summary = (node.properties?.summary as string) || "";
+        const description = (node.properties?.description as string) || "";
+        const nodeType = node.type;
         const connectedEdges = graphEdges.filter(
           (e) => e.source === selectedNode || e.target === selectedNode
         );
@@ -379,28 +447,41 @@ export default function KnowledgeGraph() {
         return (
           <Card
             size="small"
-            title={node.label}
+            title={
+              <Space>
+                <Tag color={NODE_TYPE_COLORS[nodeType] || "#1677ff"}>
+                  {NODE_TYPE_LABELS[nodeType] || nodeType}
+                </Tag>
+                {node.label}
+              </Space>
+            }
             style={{
               position: "absolute",
               bottom: 16,
               right: 16,
-              width: 380,
-              maxHeight: 400,
+              width: 400,
+              maxHeight: 420,
               overflow: "auto",
               boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
               borderRadius: 8,
             }}
             extra={<a onClick={() => setSelectedNode(null)}>关闭</a>}
           >
-            {fullTitle !== node.label && (
+            {isPaper && fullTitle !== node.label && (
               <p style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>
                 {fullTitle}
               </p>
             )}
+            {!isPaper && (summary || description) && (
+              <p style={{ fontSize: 12, color: "#555", marginBottom: 8 }}>
+                {summary || (description.length > 100 ? description.slice(0, 100) + "..." : description)}
+              </p>
+            )}
             <Space wrap style={{ marginBottom: 8 }}>
               {year > 0 && <Tag>{year}</Tag>}
-              <Tag color="blue">{citations.toLocaleString()} 引用</Tag>
+              {isPaper && <Tag color="blue">{citations.toLocaleString()} 引用</Tag>}
               {venue && <Tag color="green">{venue}</Tag>}
+              {domain && <Tag color="orange">{domain.replace(/_/g, " ")}</Tag>}
             </Space>
             {connectedEdges.length > 0 && (
               <>

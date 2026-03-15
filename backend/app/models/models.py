@@ -93,6 +93,7 @@ class Domain(Base):
 
 
 class Concept(Base):
+    """保留旧表兼容"""
     __tablename__ = "concepts"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=gen_id)
@@ -100,6 +101,35 @@ class Concept(Base):
     description: Mapped[str | None] = mapped_column(Text)
     domain_id: Mapped[str | None] = mapped_column(String(32), ForeignKey("domains.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class KnowledgeNode(Base):
+    """
+    通用知识节点：现象、定理、规律、方法、原理、概念等。
+    与 Paper 通过 Relation 表建立跨域关联。
+    """
+    __tablename__ = "knowledge_nodes"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=gen_id)
+    name: Mapped[str] = mapped_column(String(300), nullable=False, index=True)
+    node_type: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    # phenomenon(现象) / theorem(定理) / law(定律) / method(方法)
+    # concept(概念) / principle(原理) / process(过程) / structure(结构)
+    domain: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    # biology / physics / mathematics / computer_science / chemistry
+    # philosophy / engineering / economics / neuroscience / ecology
+    description: Mapped[str | None] = mapped_column(Text)
+    summary: Mapped[str | None] = mapped_column(String(500))  # 一句话简介
+    source_info: Mapped[str | None] = mapped_column(String(500))  # 提出者/发现者
+    year: Mapped[int | None] = mapped_column(Integer)  # 提出/发现年份
+    tags: Mapped[str | None] = mapped_column(String(500))  # 标签（逗号分隔）
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    def __repr__(self):
+        return f"<KnowledgeNode {self.id}: {self.name}>"
 
 
 class Relation(Base):

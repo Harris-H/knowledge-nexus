@@ -119,4 +119,33 @@ export const searchApi = {
     api.get<SearchResponse>("/search/", { params: { q, ...params } }),
 };
 
+// ---- KnowledgeNodes ----
+export interface KnowledgeNode {
+  id: string;
+  name: string;
+  node_type: string;
+  domain: string;
+  description?: string;
+  summary?: string;
+  source_info?: string;
+  year?: number;
+  tags?: string;
+  created_at: string;
+}
+
+export interface KnowledgeNodeList {
+  items: KnowledgeNode[];
+  total: number;
+}
+
+export const knowledgeNodesApi = {
+  list: (params?: Record<string, unknown>) =>
+    api.get<KnowledgeNodeList>("/knowledge-nodes/", { params }),
+  create: (data: Record<string, unknown>) =>
+    api.post<KnowledgeNode>("/knowledge-nodes/", data),
+  delete: (id: string) => api.delete(`/knowledge-nodes/${id}`),
+  batchDelete: (ids: string[]) =>
+    api.post<{ deleted: number }>("/knowledge-nodes/batch-delete", { ids }),
+};
+
 export default api;
