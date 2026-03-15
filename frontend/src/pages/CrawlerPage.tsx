@@ -111,10 +111,14 @@ export default function CrawlerPage() {
     { title: "子领域", dataIndex: "subdomain", width: 100 },
     {
       title: "进度",
-      render: (_: unknown, r: CrawlTask) =>
-        `搜索 ${r.searched} / 候选 ${r.candidates} / 入库 ${r.imported}`,
+      render: (_: unknown, r: CrawlTask) => {
+        const skipped = r.candidates - r.imported - r.failed;
+        const parts = [`搜索 ${r.searched}`, `候选 ${r.candidates}`, `入库 ${r.imported}`];
+        if (skipped > 0) parts.push(`重复 ${skipped}`);
+        if (r.failed > 0) parts.push(`失败 ${r.failed}`);
+        return parts.join(" / ");
+      },
     },
-    { title: "失败", dataIndex: "failed", width: 60 },
     {
       title: "时间",
       dataIndex: "created_at",
