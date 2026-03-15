@@ -47,7 +47,7 @@ export const useStore = create<AppState>((set, get) => ({
   fetchPapers: async (page = 1, size = 20) => {
     set({ papersLoading: true });
     try {
-      const { data } = await papersApi.list({ page, size, sort: "impact_score" });
+      const { data } = await papersApi.list({ page, size, sort: "citation_count" });
       set({ papers: data.items, papersTotal: data.total });
     } finally {
       set({ papersLoading: false });

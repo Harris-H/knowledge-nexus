@@ -92,6 +92,7 @@ export default function PapersPage() {
       dataIndex: "citation_count",
       width: 80,
       sorter: (a, b) => a.citation_count - b.citation_count,
+      defaultSortOrder: "descend" as const,
       render: (v: number) => v?.toLocaleString(),
     },
     {
