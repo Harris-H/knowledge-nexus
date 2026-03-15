@@ -234,8 +234,9 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
             await db.commit()
             return
 
-        # 每个查询多取一些，最终混合排序取 top N（确保高引用论文不被低引用查询挤掉）
-        papers_per_query = max(task.max_papers, 20)
+        # 每个查询多取一些，最终混合排序取 top N
+        # 当 min_citations 高时，符合条件的论文少，不需要多取
+        papers_per_query = max(task.max_papers, 20) if task.min_citations < 1000 else task.max_papers
         all_papers: list[PaperMeta] = []
         seen_ids: set[str] = set()
 

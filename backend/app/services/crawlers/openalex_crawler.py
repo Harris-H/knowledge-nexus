@@ -58,11 +58,11 @@ class OpenAlexCrawler(BaseCrawler):
             if self.is_cancelled:
                 break
 
-            # 使用 title.search 过滤而非全文 search，大幅提升相关性
+            # 使用 title.search + cited_by_count 范围过滤 + 引用降序排列
             filter_parts = [
                 f"title.search:{title_query}",
                 f"publication_year:{year_from}-{year_to}",
-                f"cited_by_count:>{min_citations}",
+                f"cited_by_count:{min_citations}-",  # X- 表示 >=X
                 "type:article",
             ]
 
