@@ -27,6 +27,8 @@ const RELATION_COLORS: Record<string, string> = {
   ANALOGOUS_TO: "#1677ff",
   BUILDS_ON: "#722ed1",
   RELATED_TO: "#13c2c2",
+  PART_OF: "#389e0d",
+  ENABLES: "#ff7a45",
   CONTRADICTS: "#ff4d4f",
   COMPETES_WITH: "#eb2f96",
   USED_BY: "#597ef7",
@@ -41,6 +43,8 @@ const RELATION_LABELS: Record<string, string> = {
   ANALOGOUS_TO: "类比",
   BUILDS_ON: "基于",
   RELATED_TO: "相关",
+  PART_OF: "组成",
+  ENABLES: "促成",
   CONTRADICTS: "矛盾",
   COMPETES_WITH: "竞争",
   USED_BY: "被使用",
@@ -74,6 +78,7 @@ const NODE_TYPE_LABELS: Record<string, string> = {
 // 领域颜色和标签
 const DOMAIN_COLORS: Record<string, string> = {
   computer_science: "#722ed1",
+  speech_ai: "#ff7a45",
   biology: "#52c41a",
   physics: "#1677ff",
   mathematics: "#faad14",
@@ -89,6 +94,7 @@ const DOMAIN_COLORS: Record<string, string> = {
 
 const DOMAIN_LABELS: Record<string, string> = {
   computer_science: "💻 计算机",
+  speech_ai: "🎤 语音AI",
   biology: "🧬 生物学",
   physics: "⚛️ 物理学",
   mathematics: "📊 数学",
