@@ -1,0 +1,214 @@
+import { useEffect, useState } from "react";
+import {
+  Table,
+  Tag,
+  Space,
+  Input,
+  Button,
+  Tooltip,
+  Card,
+  Drawer,
+  Descriptions,
+  Empty,
+} from "antd";
+import {
+  SearchOutlined,
+  EyeOutlined,
+  NodeIndexOutlined,
+  LinkOutlined,
+} from "@ant-design/icons";
+import type { ColumnsType } from "antd/es/table";
+import { useStore } from "../stores";
+import type { Paper } from "../api";
+
+export default function PapersPage() {
+  const { papers, papersTotal, papersLoading, fetchPapers, fetchSubgraph } =
+    useStore();
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [detailPaper, setDetailPaper] = useState<Paper | null>(null);
+
+  useEffect(() => {
+    fetchPapers(page, 20);
+  }, [page, fetchPapers]);
+
+  const columns: ColumnsType<Paper> = [
+    {
+      title: "评分",
+      dataIndex: "impact_score",
+      width: 70,
+      sorter: (a, b) => a.impact_score - b.impact_score,
+      render: (score: number) => (
+        <Tag color={score >= 80 ? "red" : score >= 50 ? "orange" : "blue"}>
+          {score.toFixed(1)}
+        </Tag>
+      ),
+    },
+    {
+      title: "论文标题",
+      dataIndex: "title",
+      ellipsis: true,
+      render: (title: string, record) => (
+        <Tooltip title={title}>
+          <a onClick={() => setDetailPaper(record)}>{title}</a>
+        </Tooltip>
+      ),
+    },
+    {
+      title: "年份",
+      dataIndex: "year",
+      width: 70,
+    },
+    {
+      title: "引用",
+      dataIndex: "citation_count",
+      width: 80,
+      sorter: (a, b) => a.citation_count - b.citation_count,
+      render: (v: number) => v?.toLocaleString(),
+    },
+    {
+      title: "会议/期刊",
+      dataIndex: "venue",
+      width: 120,
+      ellipsis: true,
+    },
+    {
+      title: "操作",
+      width: 120,
+      render: (_: unknown, record: Paper) => (
+        <Space size="small">
+          <Tooltip title="查看详情">
+            <Button
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => setDetailPaper(record)}
+            />
+          </Tooltip>
+          <Tooltip title="在图谱中查看">
+            <Button
+              size="small"
+              icon={<NodeIndexOutlined />}
+              onClick={() => fetchSubgraph(record.id)}
+            />
+          </Tooltip>
+          {record.url && (
+            <Tooltip title="原文链接">
+              <Button
+                size="small"
+                icon={<LinkOutlined />}
+                href={record.url}
+                target="_blank"
+              />
+            </Tooltip>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div style={{ padding: 16 }}>
+      <Card
+        title={`论文库 (${papersTotal} 篇)`}
+        extra={
+          <Input.Search
+            placeholder="搜索论文..."
+            prefix={<SearchOutlined />}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onSearch={() => fetchPapers(1)}
+            style={{ width: 300 }}
+            allowClear
+          />
+        }
+      >
+        <Table
+          columns={columns}
+          dataSource={papers}
+          rowKey="id"
+          loading={papersLoading}
+          size="small"
+          pagination={{
+            current: page,
+            total: papersTotal,
+            pageSize: 20,
+            onChange: setPage,
+            showTotal: (t) => `共 ${t} 篇`,
+          }}
+          locale={{ emptyText: <Empty description="暂无论文，请先启动爬取任务" /> }}
+        />
+      </Card>
+
+      <Drawer
+        title="论文详情"
+        open={!!detailPaper}
+        onClose={() => setDetailPaper(null)}
+        width={600}
+      >
+        {detailPaper && (
+          <Descriptions column={1} bordered size="small">
+            <Descriptions.Item label="标题">
+              {detailPaper.title}
+            </Descriptions.Item>
+            <Descriptions.Item label="作者">
+              {detailPaper.authors?.join(", ") || "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="年份">
+              {detailPaper.year || "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="会议/期刊">
+              {detailPaper.venue || "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="引用量">
+              {detailPaper.citation_count?.toLocaleString()}
+            </Descriptions.Item>
+            <Descriptions.Item label="影响力评分">
+              <Tag
+                color={
+                  detailPaper.impact_score >= 80
+                    ? "red"
+                    : detailPaper.impact_score >= 50
+                    ? "orange"
+                    : "blue"
+                }
+              >
+                {detailPaper.impact_score.toFixed(1)}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="DOI">
+              {detailPaper.doi ? (
+                <a
+                  href={`https://doi.org/${detailPaper.doi}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {detailPaper.doi}
+                </a>
+              ) : (
+                "-"
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label="arXiv">
+              {detailPaper.arxiv_id ? (
+                <a
+                  href={`https://arxiv.org/abs/${detailPaper.arxiv_id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {detailPaper.arxiv_id}
+                </a>
+              ) : (
+                "-"
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label="摘要">
+              <div style={{ maxHeight: 200, overflow: "auto", fontSize: 13 }}>
+                {detailPaper.abstract || "暂无摘要"}
+              </div>
+            </Descriptions.Item>
+          </Descriptions>
+        )}
+      </Drawer>
+    </div>
+  );
+}
