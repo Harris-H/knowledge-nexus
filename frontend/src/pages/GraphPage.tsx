@@ -93,6 +93,9 @@ const DOMAIN_COLORS: Record<string, string> = {
   military_science: "#c41d7f",
   history: "#8c6e3a",
   art: "#f759ab",
+  medicine: "#36cfc9",
+  cognitive_science: "#b37feb",
+  life_science: "#73d13d",
 };
 
 const DOMAIN_LABELS: Record<string, string> = {
@@ -112,6 +115,9 @@ const DOMAIN_LABELS: Record<string, string> = {
   military_science: "⚔️ 军事学",
   history: "📜 历史",
   art: "🎨 艺术",
+  medicine: "🏥 医学",
+  cognitive_science: "🧩 认知科学",
+  life_science: "🧬 生命科学",
 };
 
 const CITATION_MARKS: Record<number, string> = {
