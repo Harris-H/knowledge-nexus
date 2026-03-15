@@ -10,12 +10,12 @@ OPENALEX_API_BASE = "https://api.openalex.org"
 
 # arXiv CS 子分类映射
 ARXIV_CS_CATEGORIES = {
-    "deep_learning": "cs.LG",
+    "deep learning": "cs.LG",
     "nlp": "cs.CL",
-    "computer_vision": "cs.CV",
-    "reinforcement_learning": "cs.AI",
-    "graph_neural_networks": "cs.LG",
-    "generative_models": "cs.LG",
+    "computer vision": "cs.CV",
+    "reinforcement learning": "cs.AI",
+    "graph neural networks": "cs.LG",
+    "generative models": "cs.LG",
     "systems": "cs.DC",
     "security": "cs.CR",
 }
