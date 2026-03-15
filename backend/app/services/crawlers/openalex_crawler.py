@@ -62,7 +62,6 @@ class OpenAlexCrawler(BaseCrawler):
             filter_parts = [
                 f"cited_by_count:{min_citations}-",
                 f"publication_year:{year_from}-{year_to}",
-                "type:article",
             ]
 
             filter_str = ",".join(filter_parts)
