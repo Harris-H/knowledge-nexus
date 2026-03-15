@@ -213,6 +213,13 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
     task.started_at = datetime.utcnow()
     await db.commit()
 
+    logger.info(
+        f"🚀 [Task {task_id}] 开始爬取 | "
+        f"领域={task.domain} 子领域={task.subdomain} 数据源={task.source} "
+        f"年份={task.year_from}-{task.year_to} 最低引用={task.min_citations} "
+        f"最大论文数={task.max_papers}"
+    )
+
     crawler = None
     try:
         # 确定搜索关键词
@@ -229,10 +236,12 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
                 queries.extend(sub_queries)
 
         if not queries:
-            logger.error(f"No queries for task {task_id}")
+            logger.error(f"❌ [Task {task_id}] 无可用搜索关键词")
             task.status = "failed"
             await db.commit()
             return
+
+        logger.info(f"📋 [Task {task_id}] 搜索关键词: {queries}")
 
         # 每个查询多取一些，最终混合排序取 top N
         # 当 min_citations 高时，符合条件的论文少，不需要多取
@@ -246,12 +255,12 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
         async with crawler:
             for i, query in enumerate(queries):
                 if crawler.is_cancelled:
-                    logger.info(f"Task {task_id} cancelled during search phase")
+                    logger.info(f"⏹️ [Task {task_id}] 用户取消爬取")
                     break
 
                 logger.info(
-                    f"[Task {task_id}] Query {i+1}/{len(queries)}: '{query}' "
-                    f"(year: {task.year_from}-{task.year_to}, min_citations: {task.min_citations})"
+                    f"🔍 [Task {task_id}] 查询 {i+1}/{len(queries)}: '{query}' "
+                    f"(引用>={task.min_citations}, 限制{papers_per_query}篇)"
                 )
 
                 try:
@@ -263,7 +272,7 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
                         limit=papers_per_query,
                     )
                 except Exception as e:
-                    logger.error(f"Search failed for query '{query}': {e}")
+                    logger.error(f"❌ [Task {task_id}] 查询失败 '{query}': {e}")
                     papers = []
 
                 for p in papers:
@@ -272,11 +281,16 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
                         seen_ids.add(dedup_key)
                         all_papers.append(p)
 
+                logger.info(
+                    f"  📄 查询 '{query}' 返回 {len(papers)} 篇, "
+                    f"去重后累计 {len(all_papers)} 篇"
+                )
+
                 task.searched += len(papers)
                 await db.commit()
 
             # 输出爬虫统计
-            logger.info(f"[Task {task_id}] Crawler stats: {crawler.stats.summary()}")
+            logger.info(f"📊 [Task {task_id}] 网络统计: {crawler.stats.summary()}")
 
         # 按影响力排序，取 top N
         all_papers.sort(key=lambda p: compute_impact_score(p), reverse=True)
@@ -285,9 +299,17 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
         await db.commit()
 
         logger.info(
-            f"[Task {task_id}] Searched {task.searched} papers, "
-            f"{len(all_papers)} unique, top {len(candidates)} selected"
+            f"📊 [Task {task_id}] 搜索完成: API返回 {task.searched} 篇, "
+            f"去重后 {len(all_papers)} 篇, 选取 Top {len(candidates)} 篇"
         )
+
+        if candidates:
+            logger.info(
+                f"  🏆 引用量最高: [{candidates[0].citation_count}] {candidates[0].title[:60]}"
+            )
+            logger.info(
+                f"  📉 引用量最低: [{candidates[-1].citation_count}] {candidates[-1].title[:60]}"
+            )
 
         # 导入数据库
         imported_papers = []
@@ -300,11 +322,13 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
                 if paper:
                     imported_papers.append((paper, meta))
                     task.imported += 1
+                    logger.info(f"  ✅ 入库: [{meta.citation_count}] {meta.title[:60]}")
                 else:
                     skipped += 1
+                    logger.debug(f"  ⏭️ 跳过(已存在): {meta.title[:60]}")
             except Exception as e:
                 logger.error(
-                    f"Failed to import '{meta.title[:50]}': {e}\n"
+                    f"  ❌ 导入失败 '{meta.title[:50]}': {e}\n"
                     f"{traceback.format_exc()}"
                 )
                 task.failed += 1
@@ -335,15 +359,17 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
         task.finished_at = datetime.utcnow()
         elapsed = (task.finished_at - task.started_at).total_seconds()
 
+        status_emoji = "✅" if task.status == "completed" else "⏹️"
         logger.info(
-            f"[Task {task_id}] {'Completed' if not crawler.is_cancelled else 'Cancelled'}: "
-            f"searched={task.searched}, candidates={task.candidates}, "
-            f"imported={task.imported}, skipped={skipped}, failed={task.failed}, "
-            f"relations={relations_created}, elapsed={elapsed:.1f}s"
+            f"{status_emoji} [Task {task_id}] {task.status.upper()} | "
+            f"耗时 {elapsed:.1f}s | "
+            f"搜索={task.searched} 候选={task.candidates} "
+            f"入库={task.imported} 跳过={skipped} 失败={task.failed} "
+            f"新建关系={relations_created}"
         )
 
     except Exception as e:
-        logger.error(f"Crawl task {task_id} failed with exception: {e}\n{traceback.format_exc()}")
+        logger.error(f"❌ [Task {task_id}] 异常终止: {e}\n{traceback.format_exc()}")
         task.status = "failed"
 
     finally:
