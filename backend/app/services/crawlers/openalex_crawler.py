@@ -46,21 +46,20 @@ class OpenAlexCrawler(BaseCrawler):
         self, query: str, year_from: int = 2016, year_to: int = 2026,
         min_citations: int = 100, limit: int = 100,
     ) -> list[PaperMeta]:
-        """搜索高被引论文（使用标题搜索提升相关性）"""
+        """搜索高被引论文（使用 OpenAlex 官方 search.title_and_abstract 参数）"""
         papers = []
         page = 1
         per_page = min(limit, 200)
 
-        # 构建标题搜索表达式：缩写展开为 "缩写|全称"
-        title_query = self._expand_query(query)
+        # 缩写展开：LLM → "LLM large language model"
+        search_query = self._expand_query_for_search(query)
 
         while len(papers) < limit:
             if self.is_cancelled:
                 break
 
-            # 使用 title.search + cited_by_count 范围过滤 + 引用降序排列
+            # 使用 OpenAlex 官方格式：search.title_and_abstract + filter
             filter_parts = [
-                f"title.search:{title_query}",
                 f"publication_year:{year_from}-{year_to}",
                 f"cited_by_count:{min_citations}-",  # X- 表示 >=X
                 "type:article",
@@ -68,6 +67,7 @@ class OpenAlexCrawler(BaseCrawler):
 
             filter_str = ",".join(filter_parts)
             params = {
+                "search.title_and_abstract": search_query,
                 "filter": filter_str,
                 "sort": "cited_by_count:desc",
                 "per_page": str(per_page),
@@ -77,7 +77,7 @@ class OpenAlexCrawler(BaseCrawler):
             if self.email:
                 params["mailto"] = self.email
 
-            logger.info(f"[OpenAlex] Request: filter={filter_str}&sort=cited_by_count:desc&per_page={per_page}&page={page}")
+            logger.info(f"[OpenAlex] search.title_and_abstract={search_query}&filter={filter_str}&sort=cited_by_count:desc&per_page={per_page}&page={page}")
             data = await self.fetch(f"{OPENALEX_API_BASE}/works", params=params)
 
             if not data or "results" not in data:
@@ -230,11 +230,11 @@ class OpenAlexCrawler(BaseCrawler):
             return None
 
     @staticmethod
-    def _expand_query(query: str) -> str:
-        """展开查询：如果输入是常见缩写，扩展为 '缩写|全称' 提升召回率"""
+    def _expand_query_for_search(query: str) -> str:
+        """展开查询：如果输入是常见缩写，扩展为 '缩写 全称' 提升搜索召回率
+        用于 search.title_and_abstract 参数（不支持 | 语法，使用空格连接）"""
         q = query.strip()
         expanded = ABBREVIATION_MAP.get(q.upper())
         if expanded:
-            # 使用 OpenAlex 的 | (OR) 语法：匹配标题含缩写或全称的论文
-            return f"{q}|{expanded}"
+            return f"{q} {expanded}"
         return q
