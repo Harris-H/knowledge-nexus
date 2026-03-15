@@ -90,6 +90,9 @@ const DOMAIN_COLORS: Record<string, string> = {
   philosophy: "#13c2c2",
   sociology: "#cf1322",
   economics: "#d4b106",
+  military_science: "#c41d7f",
+  history: "#8c6e3a",
+  art: "#f759ab",
 };
 
 const DOMAIN_LABELS: Record<string, string> = {
@@ -106,6 +109,9 @@ const DOMAIN_LABELS: Record<string, string> = {
   philosophy: "🤔 哲学",
   sociology: "👥 社会学",
   economics: "📈 经济学",
+  military_science: "⚔️ 军事学",
+  history: "📜 历史",
+  art: "🎨 艺术",
 };
 
 const CITATION_MARKS: Record<number, string> = {
