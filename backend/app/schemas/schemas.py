@@ -90,7 +90,7 @@ class CrawlRequest(BaseModel):
     subdomain: str | None = None
     year_from: int = 2016
     year_to: int = 2026
-    min_citations: int = 500
+    min_citations: int = 0  # 0 = 不过滤，直接按引用量降序取 top N
     source: str = "openalex"  # openalex（默认，快速免费）/ semantic_scholar / arxiv
     max_papers: int = 100
     auto_download_pdf: bool = False

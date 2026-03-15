@@ -156,7 +156,7 @@ export default function CrawlerPage() {
                 source: "openalex",
                 year_from: 2018,
                 year_to: 2026,
-                min_citations: 500,
+                min_citations: 0,
                 max_papers: 20,
               }}
               style={{ flexWrap: "wrap", gap: 8 }}
@@ -193,10 +193,18 @@ export default function CrawlerPage() {
               <Form.Item name="year_to" label="截止年份">
                 <InputNumber min={2000} max={2026} />
               </Form.Item>
-              <Form.Item name="min_citations" label="最低引用">
+              <Form.Item
+                name="min_citations"
+                label="最低引用"
+                tooltip="设为 0 则按引用量降序取 Top N，设大于 0 则先过滤再取 Top N"
+              >
                 <InputNumber min={0} step={100} />
               </Form.Item>
-              <Form.Item name="max_papers" label="最大论文数">
+              <Form.Item
+                name="max_papers"
+                label="获取数量"
+                tooltip="按引用量降序排序后，最多获取前 N 篇论文"
+              >
                 <InputNumber min={1} max={500} />
               </Form.Item>
               <Form.Item name="domain" hidden>
