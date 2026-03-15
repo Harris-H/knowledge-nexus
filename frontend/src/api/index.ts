@@ -202,14 +202,20 @@ export interface PairAnalysis {
 }
 
 export const aiApi = {
-  discover: (limit = 8) =>
-    api.post<DiscoverResult>("/ai/discover", { limit }, { timeout: 120000 }),
+  discover: (limit = 8, domains?: string[]) =>
+    api.post<DiscoverResult>("/ai/discover", { limit, domains: domains?.length ? domains : undefined }, { timeout: 120000 }),
   derive: (nodeIds: string[]) =>
     api.post<DeriveResult>("/ai/derive", { node_ids: nodeIds }, { timeout: 120000 }),
   analyzePair: (nodeAId: string, nodeBId: string) =>
     api.post<PairAnalysis>("/ai/analyze-pair", { node_a_id: nodeAId, node_b_id: nodeBId }, { timeout: 120000 }),
   saveDiscoveries: (discoveries: AIDiscovery[], autoConfirm = false) =>
     api.post<{ saved: number }>("/ai/save-discoveries", { discoveries, auto_confirm: autoConfirm }),
+  listNodes: (domain?: string) =>
+    api.get<{
+      items: Array<{ id: string; name: string; type: string; node_type: string; domain: string; summary: string }>;
+      total: number;
+      domain_counts: Record<string, number>;
+    }>("/ai/nodes", { params: domain ? { domain } : {} }),
 };
 
 export default api;

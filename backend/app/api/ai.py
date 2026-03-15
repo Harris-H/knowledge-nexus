@@ -1,11 +1,13 @@
 """
 AI 分析 API — 利用 LLM 发现跨领域知识关联和推导新知识。
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 
 from app.core.database import get_db
+from app.models.models import KnowledgeNode, Paper
 from app.services.ai.analyzer import (
     discover_relations,
     derive_knowledge,
@@ -17,7 +19,8 @@ router = APIRouter()
 
 
 class DiscoverRequest(BaseModel):
-    limit: int = 8  # 发现的最大关联数
+    limit: int = 8
+    domains: list[str] | None = None  # 限定领域，None=全部
 
 
 class DeriveRequest(BaseModel):
@@ -44,7 +47,7 @@ async def api_discover_relations(
     扫描所有知识节点和论文，找出尚未建立但可能存在的深层联系。
     """
     try:
-        result = await discover_relations(db, limit=req.limit)
+        result = await discover_relations(db, limit=req.limit, domains=req.domains)
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -108,3 +111,40 @@ async def api_save_discoveries(
         return {"saved": saved}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"保存失败: {str(e)}")
+
+
+@router.get("/nodes")
+async def api_list_all_nodes(
+    domain: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """列出所有知识节点和论文（用于前端选择器）"""
+    items = []
+    # 知识节点
+    kn_q = select(KnowledgeNode)
+    if domain:
+        kn_q = kn_q.where(KnowledgeNode.domain == domain)
+    kn_result = await db.execute(kn_q)
+    for kn in kn_result.scalars().all():
+        items.append({
+            "id": kn.id, "name": kn.name, "type": "knowledge_node",
+            "node_type": kn.node_type, "domain": kn.domain,
+            "summary": kn.summary or "",
+        })
+    # 论文
+    p_result = await db.execute(select(Paper))
+    for p in p_result.scalars().all():
+        p_domain = (p.fields_of_study or "computer_science").split(",")[0].strip()
+        if domain and p_domain != domain:
+            continue
+        items.append({
+            "id": p.id, "name": p.key_contributions or p.title, "type": "paper",
+            "node_type": "paper", "domain": p_domain,
+            "summary": p.summary or "",
+        })
+    # 领域统计
+    domain_counts = {}
+    for item in items:
+        d = item["domain"]
+        domain_counts[d] = domain_counts.get(d, 0) + 1
+    return {"items": items, "total": len(items), "domain_counts": domain_counts}

@@ -168,13 +168,16 @@ def _fuzzy_match(query: str, name_to_id: dict) -> str | None:
     return None
 
 
-async def discover_relations(db: AsyncSession, limit: int = 10) -> dict:
+async def discover_relations(db: AsyncSession, limit: int = 10, domains: list[str] | None = None) -> dict:
     """
     从知识库中自动发现新的跨领域关联。
-    返回 LLM 发现的关联列表。
+    domains: 限定搜索范围的领域列表，None=全部领域。
     """
-    # 加载所有知识节点
-    kn_result = await db.execute(select(KnowledgeNode))
+    # 加载知识节点
+    kn_query = select(KnowledgeNode)
+    if domains:
+        kn_query = kn_query.where(KnowledgeNode.domain.in_(domains))
+    kn_result = await db.execute(kn_query)
     kn_nodes = kn_result.scalars().all()
 
     # 加载所有论文
