@@ -31,15 +31,35 @@ export default function PapersPage() {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [detailPaper, setDetailPaper] = useState<Paper | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [batchDeleting, setBatchDeleting] = useState(false);
 
   const handleDelete = async (id: string) => {
     try {
       await papersApi.delete(id);
       message.success("论文已删除");
       if (detailPaper?.id === id) setDetailPaper(null);
+      setSelectedIds((prev) => prev.filter((x) => x !== id));
       fetchPapers(page, 20);
     } catch {
       message.error("删除失败");
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setBatchDeleting(true);
+    try {
+      const { data } = await papersApi.batchDelete(selectedIds);
+      message.success(`已删除 ${data.deleted} 篇论文`);
+      setSelectedIds([]);
+      if (detailPaper && selectedIds.includes(detailPaper.id))
+        setDetailPaper(null);
+      fetchPapers(page, 20);
+    } catch {
+      message.error("批量删除失败");
+    } finally {
+      setBatchDeleting(false);
     }
   };
 
@@ -173,21 +193,45 @@ export default function PapersPage() {
       <Card
         title={`论文库 (${papersTotal} 篇)`}
         extra={
-          <Input.Search
-            placeholder="搜索论文..."
-            prefix={<SearchOutlined />}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onSearch={() => fetchPapers(1)}
-            style={{ width: 300 }}
-            allowClear
-          />
+          <Space>
+            {selectedIds.length > 0 && (
+              <Popconfirm
+                title={`确定删除选中的 ${selectedIds.length} 篇论文？`}
+                description="关联的关系也会一并删除，此操作不可撤销"
+                onConfirm={handleBatchDelete}
+                okText="删除"
+                cancelText="取消"
+                okButtonProps={{ danger: true }}
+              >
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  loading={batchDeleting}
+                >
+                  批量删除 ({selectedIds.length})
+                </Button>
+              </Popconfirm>
+            )}
+            <Input.Search
+              placeholder="搜索论文..."
+              prefix={<SearchOutlined />}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onSearch={() => fetchPapers(1)}
+              style={{ width: 300 }}
+              allowClear
+            />
+          </Space>
         }
       >
         <Table
           columns={columns}
           dataSource={papers}
           rowKey="id"
+          rowSelection={{
+            selectedRowKeys: selectedIds,
+            onChange: (keys) => setSelectedIds(keys as string[]),
+          }}
           loading={papersLoading}
           size="small"
           pagination={{

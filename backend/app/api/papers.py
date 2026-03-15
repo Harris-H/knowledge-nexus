@@ -5,6 +5,7 @@ from sqlalchemy import select, func, delete as sql_delete
 from app.core.database import get_db
 from app.models.models import Paper, Author, Relation, gen_id
 from app.schemas.schemas import PaperCreate, PaperUpdate, PaperResponse, PaperList
+from pydantic import BaseModel as PydanticBaseModel
 
 router = APIRouter()
 
@@ -145,3 +146,31 @@ async def delete_paper(paper_id: str, db: AsyncSession = Depends(get_db)):
     )
     await db.delete(paper)
     await db.commit()
+
+
+class BatchDeleteRequest(PydanticBaseModel):
+    ids: list[str]
+
+
+@router.post("/batch-delete", status_code=200)
+async def batch_delete_papers(
+    data: BatchDeleteRequest, db: AsyncSession = Depends(get_db)
+):
+    """批量删除论文及其关联关系"""
+    if not data.ids:
+        return {"deleted": 0}
+
+    # 删除关联关系
+    for paper_id in data.ids:
+        await db.execute(
+            sql_delete(Relation).where(
+                (Relation.source_id == paper_id) | (Relation.target_id == paper_id)
+            )
+        )
+
+    # 批量删除论文
+    result = await db.execute(
+        sql_delete(Paper).where(Paper.id.in_(data.ids))
+    )
+    await db.commit()
+    return {"deleted": result.rowcount}

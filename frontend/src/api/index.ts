@@ -44,6 +44,8 @@ export const papersApi = {
   get: (id: string) => api.get<Paper>(`/papers/${id}`),
   create: (data: Record<string, unknown>) => api.post<Paper>("/papers/", data),
   delete: (id: string) => api.delete(`/papers/${id}`),
+  batchDelete: (ids: string[]) =>
+    api.post<{ deleted: number }>("/papers/batch-delete", { ids }),
 };
 
 // ---- Graph ----
