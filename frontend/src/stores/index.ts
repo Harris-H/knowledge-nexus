@@ -75,6 +75,14 @@ export const useStore = create<AppState>((set, get) => ({
   fetchCrawlTasks: async () => {
     const { data } = await crawlerApi.listTasks();
     set({ crawlTasks: data });
+    // 自动检测进行中的任务并启动轮询
+    const running = data.find(
+      (t: CrawlTask) => t.status === "running" || t.status === "queued"
+    );
+    if (running) {
+      set({ activeCrawlTask: running });
+      get().pollCrawlTask(running.id);
+    }
   },
 
   startCrawl: async (params) => {

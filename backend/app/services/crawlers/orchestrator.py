@@ -6,14 +6,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.models.models import Paper, Author, Relation, CrawlTask, gen_id
-from app.services.crawlers.base import PaperMeta
+from app.services.crawlers.base import BaseCrawler, PaperMeta
 from app.services.crawlers.semantic_scholar import SemanticScholarCrawler
+from app.services.crawlers.openalex_crawler import OpenAlexCrawler
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 # 活跃的爬虫实例，支持外部取消
-_active_crawlers: dict[str, SemanticScholarCrawler] = {}
+_active_crawlers: dict[str, BaseCrawler] = {}
 
 # 计算机科学子领域搜索关键词
 CS_SUBDOMAIN_QUERIES = {
@@ -59,6 +60,21 @@ CS_SUBDOMAIN_QUERIES = {
 }
 
 
+def _create_crawler() -> BaseCrawler:
+    """根据配置创建爬虫实例。优先使用 OpenAlex（免费、快速），S2 作为后备。"""
+    source = getattr(settings, "CRAWLER_SOURCE", "openalex")
+    if source == "semantic_scholar":
+        return SemanticScholarCrawler(
+            api_key=settings.SEMANTIC_SCHOLAR_API_KEY,
+            rate_limit=settings.CRAWLER_RATE_LIMIT,
+        )
+    # 默认使用 OpenAlex：无严格速率限制，响应快
+    return OpenAlexCrawler(
+        email=getattr(settings, "OPENALEX_EMAIL", ""),
+        rate_limit=0.5,  # OpenAlex 允许快速请求
+    )
+
+
 def compute_impact_score(paper: PaperMeta) -> float:
     """计算论文综合影响力评分 (0-100)"""
     score = 0.0
@@ -94,8 +110,8 @@ async def import_paper_meta(db: AsyncSession, meta: PaperMeta) -> Paper | None:
         logger.debug(f"Skipping paper with invalid title: '{meta.title}'")
         return None
 
-    # 去重检查：按 s2_id / doi / arxiv_id
-    for field_name, value in [("s2_id", meta.s2_id), ("doi", meta.doi), ("arxiv_id", meta.arxiv_id)]:
+    # 去重检查：按 s2_id / doi / arxiv_id / url（OpenAlex ID）
+    for field_name, value in [("s2_id", meta.s2_id), ("doi", meta.doi), ("arxiv_id", meta.arxiv_id), ("url", meta.url)]:
         if value:
             result = await db.execute(
                 select(Paper).where(getattr(Paper, field_name) == value)
@@ -214,10 +230,7 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
         all_papers: list[PaperMeta] = []
         seen_ids: set[str] = set()
 
-        crawler = SemanticScholarCrawler(
-            api_key=settings.SEMANTIC_SCHOLAR_API_KEY,
-            rate_limit=settings.CRAWLER_RATE_LIMIT,
-        )
+        crawler = _create_crawler()
         _active_crawlers[task_id] = crawler
 
         async with crawler:
@@ -244,7 +257,7 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
                     papers = []
 
                 for p in papers:
-                    dedup_key = p.s2_id or p.doi or p.title
+                    dedup_key = p.s2_id or p.doi or p.url or p.title
                     if dedup_key and dedup_key not in seen_ids:
                         seen_ids.add(dedup_key)
                         all_papers.append(p)

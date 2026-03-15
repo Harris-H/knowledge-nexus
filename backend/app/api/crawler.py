@@ -3,7 +3,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.core.database import get_db, async_session
 from app.models.models import CrawlTask, gen_id
@@ -31,6 +31,24 @@ async def _run_crawl_background(task_id: str):
                 pass
 
 
+async def _cleanup_zombie_tasks():
+    """清理上次服务器关闭后遗留的 running/queued 僵尸任务"""
+    async with async_session() as db:
+        result = await db.execute(
+            update(CrawlTask)
+            .where(CrawlTask.status.in_(["running", "queued"]))
+            .values(status="failed")
+        )
+        if result.rowcount > 0:
+            await db.commit()
+            logger.info(f"Cleaned up {result.rowcount} zombie crawl tasks from previous run")
+
+
+@router.on_event("startup")
+async def on_startup():
+    await _cleanup_zombie_tasks()
+
+
 @router.post("/start", response_model=CrawlTaskResponse, status_code=202)
 async def start_crawl(data: CrawlRequest, db: AsyncSession = Depends(get_db)):
     """启动爬取任务"""
@@ -45,7 +63,9 @@ async def start_crawl(data: CrawlRequest, db: AsyncSession = Depends(get_db)):
         status="queued",
     )
     db.add(task)
-    await db.flush()
+    # 必须 commit 而非 flush，确保后台任务能读到此记录
+    await db.commit()
+    await db.refresh(task)
 
     asyncio.create_task(_run_crawl_background(task.id))
 
