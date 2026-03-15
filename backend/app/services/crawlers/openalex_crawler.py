@@ -66,8 +66,9 @@ class OpenAlexCrawler(BaseCrawler):
                 "type:article",
             ]
 
+            filter_str = ",".join(filter_parts)
             params = {
-                "filter": ",".join(filter_parts),
+                "filter": filter_str,
                 "sort": "cited_by_count:desc",
                 "per_page": str(per_page),
                 "page": str(page),
@@ -76,6 +77,7 @@ class OpenAlexCrawler(BaseCrawler):
             if self.email:
                 params["mailto"] = self.email
 
+            logger.info(f"[OpenAlex] Request: filter={filter_str}&sort=cited_by_count:desc&per_page={per_page}&page={page}")
             data = await self.fetch(f"{OPENALEX_API_BASE}/works", params=params)
 
             if not data or "results" not in data:
