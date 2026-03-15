@@ -24,6 +24,7 @@ build/
 
 # Storage (large files)
 storage/papers/*.pdf
+*.db
 
 # Docker volumes
 postgres_data/
