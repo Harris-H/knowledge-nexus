@@ -18,7 +18,7 @@ _active_crawlers: dict[str, BaseCrawler] = {}
 
 # 计算机科学子领域搜索关键词
 CS_SUBDOMAIN_QUERIES = {
-    "deep_learning": [
+    "deep learning": [
         "deep learning",
         "neural network architecture",
         "transformer model",
@@ -30,23 +30,23 @@ CS_SUBDOMAIN_QUERIES = {
         "text generation",
         "machine translation",
     ],
-    "computer_vision": [
+    "computer vision": [
         "image recognition",
         "object detection",
         "visual transformer",
         "image generation diffusion",
     ],
-    "reinforcement_learning": [
+    "reinforcement learning": [
         "reinforcement learning",
         "policy optimization",
         "multi-agent reinforcement",
     ],
-    "graph_neural_networks": [
+    "graph neural networks": [
         "graph neural network",
         "graph convolution",
         "knowledge graph embedding",
     ],
-    "generative_models": [
+    "generative models": [
         "generative adversarial network",
         "diffusion model",
         "variational autoencoder",

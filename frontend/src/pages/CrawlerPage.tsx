@@ -25,12 +25,12 @@ import { crawlerApi } from "../api";
 import type { CrawlTask } from "../api";
 
 const SUBDOMAIN_OPTIONS = [
-  { value: "deep_learning", label: "深度学习" },
+  { value: "deep learning", label: "深度学习" },
   { value: "nlp", label: "自然语言处理" },
-  { value: "computer_vision", label: "计算机视觉" },
-  { value: "reinforcement_learning", label: "强化学习" },
-  { value: "graph_neural_networks", label: "图神经网络" },
-  { value: "generative_models", label: "生成模型" },
+  { value: "computer vision", label: "计算机视觉" },
+  { value: "reinforcement learning", label: "强化学习" },
+  { value: "graph neural networks", label: "图神经网络" },
+  { value: "generative models", label: "生成模型" },
   { value: "systems", label: "系统" },
 ];
 
@@ -152,7 +152,7 @@ export default function CrawlerPage() {
               layout="inline"
               initialValues={{
                 domain: "computer_science",
-                subdomain: "deep_learning",
+                subdomain: "deep learning",
                 source: "openalex",
                 year_from: 2018,
                 year_to: 2026,
