@@ -1,8 +1,12 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import CytoscapeComponent from "react-cytoscapejs";
 import type cytoscape from "cytoscape";
 import type { Core, EventObject } from "cytoscape";
-import { Card, Empty, Select, Slider, Spin, Tag, Space, Typography } from "antd";
+import {
+  Card, Empty, Select, Slider, Spin, Tag, Space, Typography, Input,
+  Switch, AutoComplete, Tooltip,
+} from "antd";
+import { SearchOutlined, AimOutlined } from "@ant-design/icons";
 import { useStore } from "../stores";
 
 const { Text } = Typography;
@@ -43,17 +47,16 @@ const RELATION_LABELS: Record<string, string> = {
   REVIEWS: "综述",
 };
 
-// 不同类型的知识节点颜色
 const NODE_TYPE_COLORS: Record<string, string> = {
   paper: "#1677ff",
-  phenomenon: "#52c41a",  // 绿色 — 自然现象
-  theorem: "#faad14",     // 金色 — 定理
-  law: "#ff4d4f",         // 红色 — 定律
-  method: "#722ed1",      // 紫色 — 方法
-  concept: "#13c2c2",     // 青色 — 概念
-  principle: "#eb2f96",   // 粉色 — 原理
-  process: "#fa8c16",     // 橙色 — 过程
-  structure: "#597ef7",   // 蓝紫 — 结构
+  phenomenon: "#52c41a",
+  theorem: "#faad14",
+  law: "#ff4d4f",
+  method: "#722ed1",
+  concept: "#13c2c2",
+  principle: "#eb2f96",
+  process: "#fa8c16",
+  structure: "#597ef7",
 };
 
 const NODE_TYPE_LABELS: Record<string, string> = {
@@ -68,9 +71,39 @@ const NODE_TYPE_LABELS: Record<string, string> = {
   structure: "🏗️ 结构",
 };
 
+// 领域颜色和标签
+const DOMAIN_COLORS: Record<string, string> = {
+  computer_science: "#722ed1",
+  biology: "#52c41a",
+  physics: "#1677ff",
+  mathematics: "#faad14",
+  neuroscience: "#eb2f96",
+  chemistry: "#fa8c16",
+  engineering: "#597ef7",
+  psychology: "#9254de",
+  ecology: "#389e0d",
+  philosophy: "#13c2c2",
+  sociology: "#cf1322",
+  economics: "#d4b106",
+};
+
+const DOMAIN_LABELS: Record<string, string> = {
+  computer_science: "💻 计算机",
+  biology: "🧬 生物学",
+  physics: "⚛️ 物理学",
+  mathematics: "📊 数学",
+  neuroscience: "🧠 神经科学",
+  chemistry: "🧪 化学",
+  engineering: "⚙️ 工程学",
+  psychology: "🧠 心理学",
+  ecology: "🌍 生态学",
+  philosophy: "🤔 哲学",
+  sociology: "👥 社会学",
+  economics: "📈 经济学",
+};
+
 const CITATION_MARKS: Record<number, string> = {
   0: "全部",
-  1000: "1K",
   5000: "5K",
   10000: "1万",
   20000: "2万",
@@ -82,8 +115,11 @@ export default function KnowledgeGraph() {
     useStore();
   const cyRef = useRef<Core | null>(null);
   const [layout, setLayout] = useState("cose");
-  const [minCitations, setMinCitations] = useState(10000);
+  const [minCitations, setMinCitations] = useState(0);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [searchText, setSearchText] = useState("");
+  const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
+  const [crossDomainOnly, setCrossDomainOnly] = useState(false);
 
   const loadGraph = useCallback(() => {
     fetchFullGraph(minCitations);
@@ -93,9 +129,96 @@ export default function KnowledgeGraph() {
     loadGraph();
   }, [loadGraph]);
 
-  // 节点大小根据引用量缩放（论文），知识节点固定大小
+  // 提取所有出现的领域
+  const allDomains = useMemo(() => {
+    const domains = new Set<string>();
+    graphNodes.forEach((n) => {
+      const d = (n.properties?.domain as string) || "";
+      if (d) domains.add(d);
+    });
+    return Array.from(domains).sort();
+  }, [graphNodes]);
+
+  // 获取节点的领域
+  const getNodeDomain = (n: typeof graphNodes[0]): string => {
+    return (n.properties?.domain as string) || "computer_science";
+  };
+
+  // 领域过滤后的节点和边
+  const filteredData = useMemo(() => {
+    let nodes = graphNodes;
+    if (selectedDomains.length > 0) {
+      nodes = graphNodes.filter((n) => selectedDomains.includes(getNodeDomain(n)));
+    }
+    const nodeIds = new Set(nodes.map((n) => n.id));
+
+    let edges = graphEdges.filter(
+      (e) => nodeIds.has(e.source) && nodeIds.has(e.target)
+    );
+
+    if (crossDomainOnly) {
+      edges = edges.filter((e) => {
+        const srcNode = nodes.find((n) => n.id === e.source);
+        const tgtNode = nodes.find((n) => n.id === e.target);
+        if (!srcNode || !tgtNode) return false;
+        return getNodeDomain(srcNode) !== getNodeDomain(tgtNode);
+      });
+      // 只保留有跨域边的节点
+      const connectedIds = new Set<string>();
+      edges.forEach((e) => { connectedIds.add(e.source); connectedIds.add(e.target); });
+      nodes = nodes.filter((n) => connectedIds.has(n.id));
+    }
+
+    return { nodes, edges };
+  }, [graphNodes, graphEdges, selectedDomains, crossDomainOnly]);
+
+  // 搜索补全选项
+  const searchOptions = useMemo(() => {
+    return graphNodes
+      .map((n) => ({
+        value: n.id,
+        label: `${NODE_TYPE_LABELS[n.type] || n.type} ${n.label}`,
+        nodeLabel: n.label || "",
+      }))
+      .filter((opt) =>
+        searchText
+          ? opt.nodeLabel.toLowerCase().includes(searchText.toLowerCase()) ||
+            opt.label.toLowerCase().includes(searchText.toLowerCase())
+          : true
+      )
+      .slice(0, 15);
+  }, [graphNodes, searchText]);
+
+  // 搜索选中→聚焦节点
+  const handleSearchSelect = (nodeId: string) => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    const node = cy.getElementById(nodeId);
+    if (node.length === 0) return;
+
+    // 先清除之前的高亮
+    cy.elements().removeClass("dimmed hover searched");
+
+    // 高亮选中节点和邻居
+    const neighborhood = node.closedNeighborhood();
+    cy.elements().addClass("dimmed");
+    neighborhood.removeClass("dimmed");
+    node.addClass("searched");
+    neighborhood.edges().addClass("hover");
+
+    // 缩放到节点
+    cy.animate({
+      fit: { eles: neighborhood, padding: 80 },
+      duration: 600,
+    });
+
+    setSelectedNode(nodeId);
+    setSearchText("");
+  };
+
+  // 节点大小
   const getNodeSize = (node: { type: string; properties?: Record<string, unknown> }) => {
-    if (node.type !== "paper") return 32; // 知识节点固定大小
+    if (node.type !== "paper") return 32;
     const citations = (node.properties?.citations as number) || 0;
     if (citations >= 30000) return 55;
     if (citations >= 15000) return 45;
@@ -103,15 +226,13 @@ export default function KnowledgeGraph() {
     return 28;
   };
 
-  // 节点形状：论文=圆形，知识节点=菱形
   const getNodeShape = (type: string) => {
-    if (type === "paper") return "ellipse";
-    return "diamond";
+    return type === "paper" ? "ellipse" : "diamond";
   };
 
   // 转换为 Cytoscape 格式
   const elements = [
-    ...graphNodes.map((n) => ({
+    ...filteredData.nodes.map((n) => ({
       data: {
         id: n.id,
         label: n.label || "",
@@ -128,7 +249,7 @@ export default function KnowledgeGraph() {
         nodeShape: getNodeShape(n.type),
       },
     })),
-    ...graphEdges.map((e) => ({
+    ...filteredData.edges.map((e) => ({
       data: {
         id: e.id,
         source: e.source,
@@ -186,11 +307,21 @@ export default function KnowledgeGraph() {
       },
     },
     {
+      selector: "node.searched",
+      style: {
+        "border-width": 5,
+        "border-color": "#ff4d4f",
+        "background-opacity": 1,
+        "font-size": "13px",
+        "z-index": 999,
+      },
+    },
+    {
       selector: "node.dimmed",
       style: {
-        "background-opacity": 0.25,
-        "text-opacity": 0.3,
-        "border-opacity": 0.2,
+        "background-opacity": 0.15,
+        "text-opacity": 0.2,
+        "border-opacity": 0.1,
       },
     },
     {
@@ -216,10 +347,7 @@ export default function KnowledgeGraph() {
     },
     {
       selector: "edge:selected",
-      style: {
-        width: 4,
-        opacity: 1,
-      },
+      style: { width: 4, opacity: 1 },
     },
     {
       selector: "edge.hover",
@@ -234,10 +362,7 @@ export default function KnowledgeGraph() {
     },
     {
       selector: "edge.dimmed",
-      style: {
-        opacity: 0.1,
-        "text-opacity": 0.15,
-      },
+      style: { opacity: 0.08, "text-opacity": 0.1 },
     },
   ];
 
@@ -254,34 +379,74 @@ export default function KnowledgeGraph() {
       {/* 工具栏 */}
       <div
         style={{
-          padding: "10px 16px",
+          padding: "8px 16px",
           display: "flex",
           alignItems: "center",
-          gap: 16,
+          gap: 12,
           borderBottom: "1px solid #f0f0f0",
           background: "#fafafa",
           flexWrap: "wrap",
         }}
       >
-        <Space>
-          <Text strong>布局：</Text>
-          <Select
-            value={layout}
-            onChange={(val) => {
-              setLayout(val);
-              cyRef.current
-                ?.layout({ name: val, animate: true } as cytoscape.LayoutOptions)
-                .run();
-            }}
-            options={LAYOUT_OPTIONS}
-            size="small"
-            style={{ width: 160 }}
-          />
-        </Space>
+        {/* 搜索 */}
+        <AutoComplete
+          options={searchOptions}
+          onSearch={setSearchText}
+          onSelect={handleSearchSelect}
+          value={searchText}
+          placeholder="搜索节点..."
+          style={{ width: 200 }}
+          size="small"
+          allowClear
+          suffixIcon={<SearchOutlined />}
+        />
 
-        <Space style={{ flex: 1, minWidth: 280 }}>
-          <Text strong>引用过滤：</Text>
-          <div style={{ width: 300 }}>
+        {/* 领域过滤 */}
+        <Select
+          mode="multiple"
+          placeholder="筛选领域"
+          value={selectedDomains}
+          onChange={setSelectedDomains}
+          style={{ minWidth: 180, maxWidth: 400 }}
+          size="small"
+          maxTagCount={2}
+          allowClear
+          options={allDomains.map((d) => ({
+            value: d,
+            label: DOMAIN_LABELS[d] || d,
+          }))}
+        />
+
+        {/* 跨域模式 */}
+        <Tooltip title="只显示跨越不同领域的关联边">
+          <Space size={4}>
+            <Switch
+              size="small"
+              checked={crossDomainOnly}
+              onChange={setCrossDomainOnly}
+            />
+            <Text style={{ fontSize: 12 }}>跨域</Text>
+          </Space>
+        </Tooltip>
+
+        {/* 布局 */}
+        <Select
+          value={layout}
+          onChange={(val) => {
+            setLayout(val);
+            cyRef.current
+              ?.layout({ name: val, animate: true, padding: 60 } as cytoscape.LayoutOptions)
+              .run();
+          }}
+          options={LAYOUT_OPTIONS}
+          size="small"
+          style={{ width: 140 }}
+        />
+
+        {/* 引用过滤 */}
+        <Space style={{ minWidth: 200 }}>
+          <Text style={{ fontSize: 12 }}>引用≥</Text>
+          <div style={{ width: 180 }}>
             <Slider
               min={0}
               max={50000}
@@ -291,21 +456,25 @@ export default function KnowledgeGraph() {
               onChangeComplete={loadGraph}
               marks={CITATION_MARKS}
               tooltip={{
-                formatter: (v) => (v ? `≥ ${v.toLocaleString()} 引用` : "全部"),
+                formatter: (v) => (v ? `≥ ${v.toLocaleString()}` : "全部"),
               }}
             />
           </div>
         </Space>
 
-        <Text type="secondary" style={{ marginLeft: "auto" }}>
-          {graphNodes.filter(n => n.type === "paper").length} 论文 · {graphNodes.filter(n => n.type !== "paper").length} 知识节点 · {graphEdges.length} 关系
+        <Text type="secondary" style={{ marginLeft: "auto", fontSize: 12 }}>
+          {filteredData.nodes.filter((n) => n.type === "paper").length} 论文
+          {" · "}
+          {filteredData.nodes.filter((n) => n.type !== "paper").length} 知识
+          {" · "}
+          {filteredData.edges.length} 关系
         </Text>
       </div>
 
       {/* 图谱区域 */}
       {elements.length === 0 ? (
         <Empty
-          description="暂无符合条件的论文。请降低引用量阈值或先爬取数据。"
+          description="无符合条件的节点。请调整过滤条件。"
           style={{ padding: 80 }}
         />
       ) : (
@@ -317,35 +486,32 @@ export default function KnowledgeGraph() {
               name: layout,
               animate: true,
               animationDuration: 500,
-              padding: 60,
-              nodeRepulsion: () => 30000,
-              idealEdgeLength: () => 250,
-              edgeElasticity: () => 100,
-              gravity: 0.15,
-              numIter: 2000,
+              padding: 80,
+              nodeRepulsion: () => 50000,
+              idealEdgeLength: () => 300,
+              edgeElasticity: () => 80,
+              gravity: 0.08,
+              numIter: 3000,
               nodeDimensionsIncludeLabels: true,
             } as cytoscape.LayoutOptions
           }
-          style={{ width: "100%", height: "calc(100% - 80px)" }}
+          style={{ width: "100%", height: "calc(100% - 72px)" }}
           cy={(cy: Core) => {
             cyRef.current = cy;
 
-            // 点击节点
             cy.on("tap", "node", (evt: EventObject) => {
               setSelectedNode(evt.target.id());
             });
             cy.on("tap", (evt: EventObject) => {
               if (evt.target === cy) {
                 setSelectedNode(null);
-                // 清除所有高亮
-                cy.elements().removeClass("dimmed hover");
+                cy.elements().removeClass("dimmed hover searched");
               }
             });
             cy.on("dbltap", "node", (evt: EventObject) => {
               fetchSubgraph(evt.target.id());
             });
 
-            // 鼠标悬停高亮
             cy.on("mouseover", "node", (evt: EventObject) => {
               const node = evt.target;
               const neighborhood = node.closedNeighborhood();
@@ -358,13 +524,12 @@ export default function KnowledgeGraph() {
               cy.elements().removeClass("dimmed hover");
             });
 
-            // 边悬停显示描述
             cy.on("mouseover", "edge", (evt: EventObject) => {
               const edge = evt.target;
               edge.addClass("hover");
               const desc = edge.data("description");
               if (desc) {
-                edge.style("label", desc.length > 30 ? desc.slice(0, 28) + "..." : desc);
+                edge.style("label", desc.length > 40 ? desc.slice(0, 38) + "..." : desc);
               }
             });
             cy.on("mouseout", "edge", (evt: EventObject) => {
@@ -376,52 +541,47 @@ export default function KnowledgeGraph() {
         />
       )}
 
-      {/* 图例 */}
+      {/* 图例 — 按领域展示 */}
       <div
         style={{
           position: "absolute",
-          top: 60,
+          top: 52,
           left: 16,
-          background: "rgba(255,255,255,0.92)",
+          background: "rgba(255,255,255,0.95)",
           padding: "8px 12px",
           borderRadius: 6,
           boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
-          fontSize: 12,
-          maxHeight: "calc(100% - 160px)",
+          fontSize: 11,
+          maxHeight: "calc(100% - 140px)",
           overflowY: "auto",
+          minWidth: 130,
         }}
       >
-        <Text strong style={{ display: "block", marginBottom: 4 }}>
+        <Text strong style={{ display: "block", marginBottom: 4, fontSize: 12 }}>
           节点类型
         </Text>
         {Object.entries(NODE_TYPE_COLORS).map(([type, color]) => (
-          <div key={type} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+          <div key={type} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
             <div
               style={{
-                width: type === "paper" ? 10 : 10,
-                height: 10,
+                width: 9,
+                height: 9,
                 background: color,
                 borderRadius: type === "paper" ? "50%" : 2,
                 transform: type === "paper" ? "none" : "rotate(45deg)",
+                flexShrink: 0,
               }}
             />
             <span>{NODE_TYPE_LABELS[type] || type}</span>
           </div>
         ))}
-        <div style={{ borderTop: "1px solid #f0f0f0", margin: "6px 0" }} />
-        <Text strong style={{ display: "block", marginBottom: 4 }}>
-          关系类型
+        <div style={{ borderTop: "1px solid #f0f0f0", margin: "4px 0" }} />
+        <Text strong style={{ display: "block", marginBottom: 4, fontSize: 12 }}>
+          关系
         </Text>
         {Object.entries(RELATION_COLORS).map(([type, color]) => (
-          <div key={type} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-            <div
-              style={{
-                width: 20,
-                height: 3,
-                background: color,
-                borderRadius: 2,
-              }}
-            />
+          <div key={type} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 1 }}>
+            <div style={{ width: 16, height: 2.5, background: color, borderRadius: 2, flexShrink: 0 }} />
             <span>{RELATION_LABELS[type] || type}</span>
           </div>
         ))}
@@ -452,15 +612,15 @@ export default function KnowledgeGraph() {
                 <Tag color={NODE_TYPE_COLORS[nodeType] || "#1677ff"}>
                   {NODE_TYPE_LABELS[nodeType] || nodeType}
                 </Tag>
-                {node.label}
+                <span style={{ fontSize: 13 }}>{node.label}</span>
               </Space>
             }
             style={{
               position: "absolute",
               bottom: 16,
               right: 16,
-              width: 400,
-              maxHeight: 420,
+              width: 380,
+              maxHeight: 400,
               overflow: "auto",
               boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
               borderRadius: 8,
@@ -468,9 +628,7 @@ export default function KnowledgeGraph() {
             extra={<a onClick={() => setSelectedNode(null)}>关闭</a>}
           >
             {isPaper && fullTitle !== node.label && (
-              <p style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>
-                {fullTitle}
-              </p>
+              <p style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>{fullTitle}</p>
             )}
             {!isPaper && (summary || description) && (
               <p style={{ fontSize: 12, color: "#555", marginBottom: 8 }}>
@@ -481,19 +639,15 @@ export default function KnowledgeGraph() {
               {year > 0 && <Tag>{year}</Tag>}
               {isPaper && <Tag color="blue">{citations.toLocaleString()} 引用</Tag>}
               {venue && <Tag color="green">{venue}</Tag>}
-              {domain && <Tag color="orange">{domain.replace(/_/g, " ")}</Tag>}
+              {domain && <Tag color={DOMAIN_COLORS[domain] || "orange"}>{DOMAIN_LABELS[domain] || domain}</Tag>}
             </Space>
             {connectedEdges.length > 0 && (
               <>
-                <Text
-                  strong
-                  style={{ display: "block", marginBottom: 4, fontSize: 12 }}
-                >
+                <Text strong style={{ display: "block", marginBottom: 4, fontSize: 12 }}>
                   关联 ({connectedEdges.length}):
                 </Text>
                 {connectedEdges.map((edge) => {
-                  const otherId =
-                    edge.source === selectedNode ? edge.target : edge.source;
+                  const otherId = edge.source === selectedNode ? edge.target : edge.source;
                   const otherNode = graphNodes.find((n) => n.id === otherId);
                   const direction = edge.source === selectedNode ? "→" : "←";
                   const desc = (edge.properties?.description as string) || "";
@@ -503,32 +657,22 @@ export default function KnowledgeGraph() {
                       style={{
                         fontSize: 11,
                         color: "#555",
-                        marginBottom: 6,
+                        marginBottom: 5,
                         padding: "3px 0",
                         borderBottom: "1px dashed #f0f0f0",
                       }}
                     >
                       <div>
-                        <Tag
-                          color={RELATION_COLORS[edge.type] || "#ccc"}
-                          style={{ fontSize: 10 }}
-                        >
+                        <Tag color={RELATION_COLORS[edge.type] || "#ccc"} style={{ fontSize: 10 }}>
                           {RELATION_LABELS[edge.type] || edge.type}
                         </Tag>
                         {direction}{" "}
-                        {otherNode
-                          ? (otherNode.label || "").slice(0, 40)
-                          : otherId}
+                        <a onClick={() => { setSelectedNode(otherId); handleSearchSelect(otherId); }}>
+                          {otherNode ? (otherNode.label || "").slice(0, 35) : otherId}
+                        </a>
                       </div>
                       {desc && (
-                        <div
-                          style={{
-                            fontSize: 10,
-                            color: "#999",
-                            marginTop: 2,
-                            paddingLeft: 8,
-                          }}
-                        >
+                        <div style={{ fontSize: 10, color: "#999", marginTop: 2, paddingLeft: 8 }}>
                           💡 {desc}
                         </div>
                       )}
