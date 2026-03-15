@@ -159,13 +159,16 @@ export default function KnowledgeGraph() {
         "target-arrow-shape": "triangle" as const,
         "curve-style": "bezier" as const,
         label: "data(label)",
-        "font-size": "11px",
-        color: "#555",
+        "font-size": "12px",
+        "font-weight": "bold" as const,
+        color: "#1a1a1a",
         "text-rotation": "autorotate" as const,
         "text-margin-y": -12,
-        opacity: 0.75,
-        "text-background-color": "#fff",
-        "text-background-opacity": 0.8,
+        opacity: 0.85,
+        "text-background-color": "#fffbe6",
+        "text-background-opacity": 0.95,
+        "text-background-padding": "4px" as unknown as string,
+        "text-background-shape": "roundrectangle" as const,
       },
     },
     {
@@ -178,14 +181,19 @@ export default function KnowledgeGraph() {
     {
       selector: "edge.hover",
       style: {
-        width: 3.5,
+        width: 4,
         opacity: 1,
+        "font-size": "13px",
+        color: "#000",
+        "text-background-color": "#ffec3d",
+        "text-background-opacity": 1,
       },
     },
     {
       selector: "edge.dimmed",
       style: {
-        opacity: 0.12,
+        opacity: 0.1,
+        "text-opacity": 0.15,
       },
     },
   ];
