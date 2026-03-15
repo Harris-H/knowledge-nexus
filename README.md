@@ -31,21 +31,24 @@ Human knowledge is scattered across disciplines, yet many concepts are deeply co
 ## ✨ Features
 
 ### 📚 Knowledge Base Management
-- Multi-type knowledge nodes: papers, concepts, phenomena, theorems, methods, principles
-- Paper metadata with PDF storage, DOI, citation counts
-- Multi-domain support: Computer Science, Speech AI, Biology, Physics, Mathematics, and more
-- Batch import via scripts or crawler
+- **8 knowledge node types**: phenomenon, theorem, law, method, concept, principle, process, structure
+- **19 domains** covering natural sciences, social sciences, humanities, and engineering
+- Paper metadata with PDF storage, DOI, arXiv ID, citation counts, impact scoring, and LLM-generated summaries
+- Batch import via scripts or crawler, batch delete with cascading relation cleanup
 
 ### 🕸️ Interactive Knowledge Graph
 - **Cytoscape.js**-powered graph visualization with domain-colored nodes
+- **5 layout algorithms**: Force-directed (Cose), Circle, Concentric, Breadthfirst, Grid
 - Search by keyword, filter by domain, toggle cross-domain mode
 - Zoom, pan, drag, and click-to-focus interactions
-- Multiple relation types: CITES, BUILDS_ON, IMPROVES, ANALOGOUS_TO, INSPIRES, PART_OF, ENABLES
+- Full graph view + subgraph exploration (configurable depth 1–3)
+- **13 relation types**: CITES, BUILDS_ON, IMPROVES, ANALOGOUS_TO, INSPIRES, INSPIRED_BY, PART_OF, ENABLES, RELATED_TO, CONTRADICTS, COMPETES_WITH, USED_BY, REVIEWS
 
 ### 🤖 AI Discovery Engine (LLM-Powered)
-- **Cross-Domain Discovery** — AI analyzes knowledge nodes to find hidden associations across domains
-- **Pair Analysis** — Deep dive into the relationship between any two selected nodes
-- **Knowledge Derivation** — Select multiple nodes and let AI derive new insights and hypotheses
+- **Cross-Domain Discovery** — AI scans knowledge nodes to find 5–10 hidden cross-domain associations per run, with confidence scores and visual indicators
+- **Pair Analysis** — 6-dimensional deep analysis: structural analogy, causal links, complementarity, unified framework, and more
+- **Knowledge Derivation** — Select 2–10 nodes and derive abstract patterns, transfer ideas, missing links, and new hypotheses with feasibility ratings
+- Save discoveries as "pending review" or auto-confirm into the knowledge graph
 - Domain filtering to focus discovery on specific fields
 - Fuzzy matching with 3-level strategy for robust node identification
 - Compatible with any OpenAI-format LLM API (Doubao, DeepSeek, OpenAI, Ollama)
@@ -57,9 +60,10 @@ Human knowledge is scattered across disciplines, yet many concepts are deeply co
 - Rate-limited, resumable, deduplicated
 
 ### 🔍 Graph Exploration
-- Domain-filtered subgraphs
+- Domain-filtered subgraphs with configurable depth (1–3)
 - Cross-domain mode highlighting inter-field connections
 - Node detail panel with full metadata
+- Citation threshold filtering for papers
 
 ## 📐 Architecture
 
@@ -249,14 +253,25 @@ knowledge-nexus/
 |--------|-------|--------|-------------|
 | 💻 Computer Science | 49 | ~26 | Full AI stack: Backpropagation → Transformer → LLM → Agent → MCP |
 | 🎤 Speech AI | 12 | 18 | ASR, TTS, Voice Cloning, Neural Audio Codec, Speech LLM |
-| 🧬 Biology | 6 | - | Evolution, genetics, neural systems |
-| ⚛️ Physics | 4 | - | Thermodynamics, quantum mechanics |
-| 📊 Mathematics | 4 | - | Graph theory, optimization, probability |
-| 🧠 Neuroscience | 3 | - | Neural plasticity, memory |
-| 🧪 Chemistry | 2 | - | Catalysis, molecular self-assembly |
-| + 6 more domains | ... | ... | Psychology, ecology, philosophy, sociology, economics, engineering |
+| 🧠 Philosophy | 22 | - | Reductionism, systems thinking, emergence, epistemology |
+| 🎨 Art | 12 | - | Golden ratio, generative art, color theory, Gestalt, montage |
+| 🧬 Biology | 10 | - | Evolution, genetics, CRISPR, symbiosis, central dogma |
+| ⚛️ Physics | 10 | - | Thermodynamics, quantum mechanics, Noether's theorem, superconductivity |
+| 📊 Mathematics | 10 | - | Graph theory, optimization, topology, Gödel's incompleteness |
+| 🧪 Psychology | 10 | - | Conditioning, cognitive dissonance, working memory, conformity |
+| 🔬 Chemistry | 12 | - | Periodic law, acid-base theory, redox, chirality, spectroscopy |
+| 🌿 Ecology | 12 | - | Competitive exclusion, succession, nitrogen cycle, biodiversity |
+| 💰 Economics | 12 | - | Supply-demand, Nash equilibrium, prospect theory, externalities |
+| ⚙️ Engineering | 12 | - | FEA, redundancy, modular design, fatigue failure, PLM |
+| 🧠 Neuroscience | 12 | - | Hebbian learning, LTP, synaptic pruning, BCI, lateral inhibition |
+| 👥 Sociology | 12 | - | Social capital, weak ties, Dunbar's number, labeling theory |
+| 🏥 Medicine | 12 | - | Dose-response, precision medicine, microbiome, medical imaging |
+| 🧠 Cognitive Science | 12 | - | Metacognition, dual process, change blindness, situated cognition |
+| 🌱 Life Science | 12 | - | Cell theory, autophagy, epigenetics, protein folding |
+| ⚔️ Military Science | 12 | - | OODA loop, Lanchester's laws, wargaming, Art of War |
+| 📜 History | 12 | - | Path dependence, Longue durée, Great Divergence, Occam's razor |
 
-**Total: 135+ nodes, 247+ relations, 13 domains**
+**Total: 267 nodes, 44 papers, 429+ relations, 19 domains, 8 node types**
 
 ## 🤖 LLM Configuration
 
