@@ -132,9 +132,10 @@ async def api_list_all_nodes(
             "summary": kn.summary or "",
         })
     # 论文
+    from app.api.graph import _normalize_paper_domain
     p_result = await db.execute(select(Paper))
     for p in p_result.scalars().all():
-        p_domain = (p.fields_of_study or "computer_science").split(",")[0].strip()
+        p_domain = _normalize_paper_domain(p.fields_of_study)
         if domain and p_domain != domain:
             continue
         items.append({

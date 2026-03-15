@@ -8,6 +8,31 @@ from app.schemas.schemas import SubgraphResponse, GraphNode, GraphEdge, Relation
 
 router = APIRouter()
 
+# Normalize paper fields_of_study to lowercase domain slug
+_DOMAIN_MAP = {
+    "computer science": "computer_science",
+    "artificial intelligence": "computer_science",
+    "machine learning": "computer_science",
+    "biology": "biology",
+    "structural biology": "life_science",
+    "bioinformatics": "life_science",
+    "physics": "physics",
+    "mathematics": "mathematics",
+    "statistics": "mathematics",
+    "psychology": "psychology",
+    "economics": "economics",
+    "engineering": "engineering",
+    "chemistry": "chemistry",
+}
+
+def _normalize_paper_domain(fields_of_study: str | None) -> str:
+    if not fields_of_study:
+        return "computer_science"
+    first_field = fields_of_study.split(",")[0].strip().lower()
+    if first_field.startswith("speech_ai"):
+        return "speech_ai"
+    return _DOMAIN_MAP.get(first_field, "computer_science")
+
 
 @router.get("/full", response_model=SubgraphResponse)
 async def get_full_graph(
@@ -38,7 +63,7 @@ async def get_full_graph(
                 "impact_score": p.impact_score,
                 "venue": p.venue or "",
                 "full_title": p.title,
-                "domain": (p.fields_of_study or "").split(",")[0].strip() if p.fields_of_study else "computer_science",
+                "domain": _normalize_paper_domain(p.fields_of_study),
             },
         ))
 
@@ -153,7 +178,7 @@ async def get_subgraph(
                     "year": paper.year,
                     "citations": paper.citation_count,
                     "full_title": paper.title,
-                    "domain": (paper.fields_of_study or "").split(",")[0].strip() if paper.fields_of_study else "computer_science",
+                    "domain": _normalize_paper_domain(paper.fields_of_study),
                 },
             )
             continue
