@@ -51,17 +51,17 @@ class OpenAlexCrawler(BaseCrawler):
         page = 1
         per_page = min(limit, 200)
 
-        # 缩写展开：LLM → "LLM large language model"
+        # 缩写展开：LLM → "large language model"
         search_query = self._expand_query_for_search(query)
 
         while len(papers) < limit:
             if self.is_cancelled:
                 break
 
-            # 使用 OpenAlex 官方格式：search.title_and_abstract + filter
+            # 与 OpenAlex 官网完全一致的请求格式
             filter_parts = [
+                f"cited_by_count:{min_citations}-",
                 f"publication_year:{year_from}-{year_to}",
-                f"cited_by_count:{min_citations}-",  # X- 表示 >=X
                 "type:article",
             ]
 
@@ -69,7 +69,7 @@ class OpenAlexCrawler(BaseCrawler):
             params = {
                 "search.title_and_abstract": search_query,
                 "filter": filter_str,
-                "sort": "cited_by_count:desc",
+                "sort": "relevance_score:desc",
                 "per_page": str(per_page),
                 "page": str(page),
             }
@@ -77,7 +77,10 @@ class OpenAlexCrawler(BaseCrawler):
             if self.email:
                 params["mailto"] = self.email
 
-            logger.info(f"[OpenAlex] search.title_and_abstract={search_query}&filter={filter_str}&sort=cited_by_count:desc&per_page={per_page}&page={page}")
+            logger.info(
+                f"[OpenAlex] search.title_and_abstract={search_query.replace(' ', '+')}"
+                f"&filter={filter_str}&sort=relevance_score:desc&per_page={per_page}&page={page}"
+            )
             data = await self.fetch(f"{OPENALEX_API_BASE}/works", params=params)
 
             if not data or "results" not in data:
@@ -231,10 +234,10 @@ class OpenAlexCrawler(BaseCrawler):
 
     @staticmethod
     def _expand_query_for_search(query: str) -> str:
-        """展开查询：如果输入是常见缩写，扩展为 '缩写 全称' 提升搜索召回率
-        用于 search.title_and_abstract 参数（不支持 | 语法，使用空格连接）"""
+        """展开查询：如果输入是常见缩写，替换为全称
+        用于 search.title_and_abstract 参数"""
         q = query.strip()
         expanded = ABBREVIATION_MAP.get(q.upper())
         if expanded:
-            return f"{q} {expanded}"
+            return expanded
         return q
