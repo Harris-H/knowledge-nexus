@@ -78,7 +78,9 @@ export default function AIDiscoveryPage() {
       const res = await aiApi.listNodes();
       setAllNodes(res.data.items);
       setDomainCounts(res.data.domain_counts);
-    } catch { /* ignore */ }
+    } catch (e) {
+      console.error("Failed to load nodes:", e);
+    }
   }, []);
 
   useEffect(() => { loadNodes(); }, [loadNodes]);
