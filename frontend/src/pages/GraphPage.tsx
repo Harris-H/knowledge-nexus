@@ -77,11 +77,8 @@ export default function KnowledgeGraph() {
     ...graphNodes.map((n) => ({
       data: {
         id: n.id,
-        label:
-          (n.label || "").length > 35
-            ? (n.label || "").slice(0, 32) + "..."
-            : n.label || "",
-        fullLabel: n.label || "",
+        label: n.label || "",
+        fullTitle: (n.properties?.full_title as string) || n.label || "",
         type: n.type,
         citations: (n.properties?.citations as number) || 0,
         year: (n.properties?.year as number) || 0,
@@ -364,6 +361,7 @@ export default function KnowledgeGraph() {
         const citations = (node.properties?.citations as number) || 0;
         const year = (node.properties?.year as number) || 0;
         const venue = (node.properties?.venue as string) || "";
+        const fullTitle = (node.properties?.full_title as string) || node.label || "";
         const connectedEdges = graphEdges.filter(
           (e) => e.source === selectedNode || e.target === selectedNode
         );
@@ -371,7 +369,7 @@ export default function KnowledgeGraph() {
         return (
           <Card
             size="small"
-            title="论文详情"
+            title={node.label}
             style={{
               position: "absolute",
               bottom: 16,
@@ -384,7 +382,11 @@ export default function KnowledgeGraph() {
             }}
             extra={<a onClick={() => setSelectedNode(null)}>关闭</a>}
           >
-            <p style={{ fontWeight: 600, marginBottom: 8 }}>{node.label}</p>
+            {fullTitle !== node.label && (
+              <p style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>
+                {fullTitle}
+              </p>
+            )}
             <Space wrap style={{ marginBottom: 8 }}>
               {year > 0 && <Tag>{year}</Tag>}
               <Tag color="blue">{citations.toLocaleString()} 引用</Tag>

@@ -29,12 +29,13 @@ async def get_full_graph(
         nodes.append(GraphNode(
             id=p.id,
             type="paper",
-            label=p.title,
+            label=p.key_contributions or p.title,  # 优先使用短名称
             properties={
                 "year": p.year,
                 "citations": p.citation_count,
                 "impact_score": p.impact_score,
                 "venue": p.venue or "",
+                "full_title": p.title,
             },
         ))
 
@@ -123,8 +124,12 @@ async def get_subgraph(
             nodes[nid] = GraphNode(
                 id=paper.id,
                 type="paper",
-                label=paper.title,
-                properties={"year": paper.year, "citations": paper.citation_count},
+                label=paper.key_contributions or paper.title,
+                properties={
+                    "year": paper.year,
+                    "citations": paper.citation_count,
+                    "full_title": paper.title,
+                },
             )
 
     # 限制返回数量
