@@ -148,4 +148,68 @@ export const knowledgeNodesApi = {
     api.post<{ deleted: number }>("/knowledge-nodes/batch-delete", { ids }),
 };
 
+// ---- AI Analysis ----
+export interface AIDiscovery {
+  source_id: string;
+  source_name: string;
+  source_type: string;
+  target_id: string;
+  target_name: string;
+  target_type: string;
+  relation_type: string;
+  description: string;
+  confidence: number;
+  insight: string;
+}
+
+export interface DiscoverResult {
+  discoveries: AIDiscovery[];
+  total_nodes: number;
+}
+
+export interface DeriveResult {
+  abstract_pattern?: {
+    name: string;
+    description: string;
+  };
+  transfer_ideas?: Array<{
+    from_domain: string;
+    to_domain: string;
+    idea: string;
+    feasibility: string;
+  }>;
+  missing_links?: Array<{
+    description: string;
+    potential_value: string;
+  }>;
+  new_hypotheses?: Array<{
+    hypothesis: string;
+    evidence_needed: string;
+    impact: string;
+  }>;
+}
+
+export interface PairAnalysis {
+  has_relation: boolean;
+  relation_type: string;
+  description: string;
+  confidence: number;
+  structural_analogy: string;
+  causal_link: string;
+  complementarity: string;
+  unified_framework: string;
+  new_insight: string;
+}
+
+export const aiApi = {
+  discover: (limit = 8) =>
+    api.post<DiscoverResult>("/ai/discover", { limit }, { timeout: 120000 }),
+  derive: (nodeIds: string[]) =>
+    api.post<DeriveResult>("/ai/derive", { node_ids: nodeIds }, { timeout: 120000 }),
+  analyzePair: (nodeAId: string, nodeBId: string) =>
+    api.post<PairAnalysis>("/ai/analyze-pair", { node_a_id: nodeAId, node_b_id: nodeBId }, { timeout: 120000 }),
+  saveDiscoveries: (discoveries: AIDiscovery[], autoConfirm = false) =>
+    api.post<{ saved: number }>("/ai/save-discoveries", { discoveries, auto_confirm: autoConfirm }),
+};
+
 export default api;

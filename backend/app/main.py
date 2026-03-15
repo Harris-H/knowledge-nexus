@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import init_db
-from app.api import papers, graph, crawler, search, knowledge_nodes
+from app.api import papers, graph, crawler, search, knowledge_nodes, ai
 
 # 配置日志：爬虫和编排器的日志输出到控制台
 logging.basicConfig(
@@ -52,6 +52,7 @@ app.include_router(
     prefix="/api/v1/knowledge-nodes",
     tags=["知识节点"],
 )
+app.include_router(ai.router, prefix="/api/v1/ai", tags=["AI 分析"])
 
 
 @app.get("/")

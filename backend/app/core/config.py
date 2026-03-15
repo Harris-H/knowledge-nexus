@@ -27,10 +27,17 @@ class Settings(BaseSettings):
     # Redis（可选）
     REDIS_URL: str = ""
 
-    # AI / LLM
+    # AI / LLM（兼容 OpenAI 格式，支持 Doubao/DeepSeek/OpenAI/Ollama）
+    LLM_API_KEY: str = ""
+    LLM_BASE_URL: str = "https://ark.cn-beijing.volces.com/api/v3"  # 默认豆包
+    LLM_MODEL: str = "doubao-seed-2-0-lite-260215"
+    # DeepSeek: LLM_BASE_URL=https://api.deepseek.com/v1  LLM_MODEL=deepseek-chat
+    # OpenAI:   LLM_BASE_URL=https://api.openai.com/v1    LLM_MODEL=gpt-4o-mini
+    # Ollama:   LLM_BASE_URL=http://localhost:11434/v1     LLM_MODEL=qwen2.5
+
+    # 保留旧字段兼容
     OPENAI_API_KEY: str = ""
     OPENAI_BASE_URL: str = ""
-    LLM_MODEL: str = "gpt-4o"
 
     # Semantic Scholar API
     SEMANTIC_SCHOLAR_API_KEY: str = ""
