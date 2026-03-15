@@ -6,6 +6,30 @@ logger = logging.getLogger(__name__)
 
 OPENALEX_API_BASE = "https://api.openalex.org"
 
+# 常见缩写到全称的映射，用于提升搜索相关性
+ABBREVIATION_MAP = {
+    "LLM": "large language model",
+    "NLP": "natural language processing",
+    "CV": "computer vision",
+    "RL": "reinforcement learning",
+    "GNN": "graph neural network",
+    "GAN": "generative adversarial network",
+    "CNN": "convolutional neural network",
+    "RNN": "recurrent neural network",
+    "BERT": "bidirectional encoder representations transformers",
+    "GPT": "generative pre-trained transformer",
+    "VAE": "variational autoencoder",
+    "RAG": "retrieval augmented generation",
+    "RLHF": "reinforcement learning human feedback",
+    "VLM": "vision language model",
+    "MLLMs": "multimodal large language models",
+    "AGI": "artificial general intelligence",
+    "NAS": "neural architecture search",
+    "SSL": "self-supervised learning",
+    "PINN": "physics-informed neural network",
+    "PINNs": "physics-informed neural networks",
+}
+
 
 class OpenAlexCrawler(BaseCrawler):
     """OpenAlex API 爬虫
@@ -22,22 +46,28 @@ class OpenAlexCrawler(BaseCrawler):
         self, query: str, year_from: int = 2016, year_to: int = 2026,
         min_citations: int = 100, limit: int = 100,
     ) -> list[PaperMeta]:
-        """搜索高被引论文"""
+        """搜索高被引论文（使用标题搜索提升相关性）"""
         papers = []
         page = 1
         per_page = min(limit, 200)
+
+        # 构建标题搜索表达式：缩写展开为 "缩写|全称"
+        title_query = self._expand_query(query)
 
         while len(papers) < limit:
             if self.is_cancelled:
                 break
 
+            # 使用 title.search 过滤而非全文 search，大幅提升相关性
+            filter_parts = [
+                f"title.search:{title_query}",
+                f"publication_year:{year_from}-{year_to}",
+                f"cited_by_count:>{min_citations}",
+                "type:article",
+            ]
+
             params = {
-                "search": query,
-                "filter": (
-                    f"publication_year:{year_from}-{year_to},"
-                    f"cited_by_count:>{min_citations},"
-                    f"type:article"
-                ),
+                "filter": ",".join(filter_parts),
                 "sort": "cited_by_count:desc",
                 "per_page": str(per_page),
                 "page": str(page),
@@ -196,3 +226,13 @@ class OpenAlexCrawler(BaseCrawler):
             return " ".join(w for _, w in word_positions)
         except Exception:
             return None
+
+    @staticmethod
+    def _expand_query(query: str) -> str:
+        """展开查询：如果输入是常见缩写，扩展为 '缩写|全称' 提升召回率"""
+        q = query.strip()
+        expanded = ABBREVIATION_MAP.get(q.upper())
+        if expanded:
+            # 使用 OpenAlex 的 | (OR) 语法：匹配标题含缩写或全称的论文
+            return f"{q}|{expanded}"
+        return q
