@@ -136,6 +136,7 @@ async def import_paper_meta(db: AsyncSession, meta: PaperMeta) -> Paper | None:
         citation_count=meta.citation_count,
         influential_citation_count=meta.influential_citation_count,
         impact_score=compute_impact_score(meta),
+        fields_of_study=", ".join(meta.fields_of_study[:5]) if meta.fields_of_study else None,
     )
 
     # 处理作者（限制数量，防御异常数据）

@@ -24,6 +24,7 @@ export interface Paper {
   impact_score: number;
   key_contributions?: string;
   summary?: string;
+  fields_of_study?: string;
   ai_status: string;
   pdf_path?: string;
   authors: string[];

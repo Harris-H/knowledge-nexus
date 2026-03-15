@@ -10,15 +10,19 @@ import {
   Drawer,
   Descriptions,
   Empty,
+  Popconfirm,
+  message,
 } from "antd";
 import {
   SearchOutlined,
   EyeOutlined,
   NodeIndexOutlined,
   LinkOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { useStore } from "../stores";
+import { papersApi } from "../api";
 import type { Paper } from "../api";
 
 export default function PapersPage() {
@@ -27,6 +31,17 @@ export default function PapersPage() {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [detailPaper, setDetailPaper] = useState<Paper | null>(null);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await papersApi.delete(id);
+      message.success("论文已删除");
+      if (detailPaper?.id === id) setDetailPaper(null);
+      fetchPapers(page, 20);
+    } catch {
+      message.error("删除失败");
+    }
+  };
 
   useEffect(() => {
     fetchPapers(page, 20);
@@ -80,6 +95,24 @@ export default function PapersPage() {
       render: (v: number) => v?.toLocaleString(),
     },
     {
+      title: "领域",
+      dataIndex: "fields_of_study",
+      width: 150,
+      ellipsis: true,
+      render: (v: string) =>
+        v ? (
+          <Space size={2} wrap>
+            {v.split(", ").slice(0, 2).map((f) => (
+              <Tag key={f} color="cyan" style={{ fontSize: 11 }}>
+                {f}
+              </Tag>
+            ))}
+          </Space>
+        ) : (
+          "-"
+        ),
+    },
+    {
       title: "会议/期刊",
       dataIndex: "venue",
       width: 120,
@@ -87,7 +120,7 @@ export default function PapersPage() {
     },
     {
       title: "操作",
-      width: 120,
+      width: 140,
       render: (_: unknown, record: Paper) => (
         <Space size="small">
           <Tooltip title="查看详情">
@@ -114,6 +147,21 @@ export default function PapersPage() {
               />
             </Tooltip>
           )}
+          <Popconfirm
+            title="确定删除这篇论文？"
+            description="关联的关系也会一并删除"
+            onConfirm={() => handleDelete(record.id)}
+            okText="删除"
+            cancelText="取消"
+          >
+            <Tooltip title="删除">
+              <Button
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+              />
+            </Tooltip>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -185,6 +233,19 @@ export default function PapersPage() {
             </Descriptions.Item>
             <Descriptions.Item label="会议/期刊">
               {detailPaper.venue || "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="所属领域">
+              {detailPaper.fields_of_study ? (
+                <Space size={4} wrap>
+                  {detailPaper.fields_of_study.split(", ").map((f) => (
+                    <Tag key={f} color="cyan">
+                      {f}
+                    </Tag>
+                  ))}
+                </Space>
+              ) : (
+                "-"
+              )}
             </Descriptions.Item>
             <Descriptions.Item label="引用量">
               {detailPaper.citation_count?.toLocaleString()}

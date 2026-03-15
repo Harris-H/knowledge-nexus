@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete as sql_delete
 
 from app.core.database import get_db
-from app.models.models import Paper, Author, gen_id
+from app.models.models import Paper, Author, Relation, gen_id
 from app.schemas.schemas import PaperCreate, PaperUpdate, PaperResponse, PaperList
 
 router = APIRouter()
@@ -131,9 +131,17 @@ async def update_paper(
 
 @router.delete("/{paper_id}", status_code=204)
 async def delete_paper(paper_id: str, db: AsyncSession = Depends(get_db)):
-    """删除论文"""
+    """删除论文及其关联关系"""
     result = await db.execute(select(Paper).where(Paper.id == paper_id))
     paper = result.scalar_one_or_none()
     if not paper:
         raise HTTPException(status_code=404, detail="论文不存在")
+
+    # 删除关联的关系（作为 source 或 target）
+    await db.execute(
+        sql_delete(Relation).where(
+            (Relation.source_id == paper_id) | (Relation.target_id == paper_id)
+        )
+    )
     await db.delete(paper)
+    await db.commit()

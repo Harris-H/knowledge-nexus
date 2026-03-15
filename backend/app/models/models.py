@@ -47,6 +47,7 @@ class Paper(Base):
     impact_score: Mapped[float] = mapped_column(Float, default=0.0)
     key_contributions: Mapped[str | None] = mapped_column(Text)  # 短名称
     summary: Mapped[str | None] = mapped_column(String(500))  # 一句话简介
+    fields_of_study: Mapped[str | None] = mapped_column(String(500))  # 所属领域（逗号分隔）
     ai_status: Mapped[str] = mapped_column(String(20), default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
