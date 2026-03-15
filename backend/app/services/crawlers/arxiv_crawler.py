@@ -6,6 +6,7 @@ from app.services.crawlers.base import BaseCrawler, PaperMeta
 logger = logging.getLogger(__name__)
 
 ARXIV_API_BASE = "http://export.arxiv.org/api/query"
+OPENALEX_API_BASE = "https://api.openalex.org"
 
 # arXiv CS 子分类映射
 ARXIV_CS_CATEGORIES = {
@@ -21,24 +22,45 @@ ARXIV_CS_CATEGORIES = {
 
 
 class ArxivCrawler(BaseCrawler):
-    """arXiv API 爬虫
+    """arXiv API 爬虫（含 OpenAlex 引用交叉验证）
 
-    arXiv API 返回 Atom XML，但通过参数控制可获取结构化数据。
-    主要用于：获取 PDF 下载链接、补充 Semantic Scholar 缺失的论文。
-    建议请求间隔 >= 3 秒。
+    arXiv 用于发现最新前沿预印本，OpenAlex 用于补充引用量数据。
+    流程：arXiv 搜索 → OpenAlex 交叉查询引用量 → 过滤低引用论文。
     """
 
-    def __init__(self, rate_limit: float = 3.0):
+    def __init__(self, rate_limit: float = 3.0, enable_citation_check: bool = True):
         super().__init__(rate_limit=rate_limit, rate_jitter=0.5, use_browser_headers=False)
+        self.enable_citation_check = enable_citation_check
 
     async def search_papers(
         self, query: str, year_from: int = 2016, year_to: int = 2026,
         min_citations: int = 0, limit: int = 100,
     ) -> list[PaperMeta]:
-        """搜索 arXiv 论文
+        """搜索 arXiv 论文，并通过 OpenAlex 交叉验证引用量"""
+        # 第一阶段：从 arXiv 获取论文列表
+        raw_papers = await self._search_arxiv(query, year_from, year_to, limit * 2)
 
-        注意：arXiv API 不支持按引用量筛选，需要后续通过其他数据源补充。
-        """
+        if not raw_papers:
+            return []
+
+        # 第二阶段：通过 OpenAlex 交叉验证引用量
+        if self.enable_citation_check and min_citations > 0:
+            enriched = await self._enrich_with_openalex(raw_papers)
+            # 过滤低引用论文
+            enriched = [p for p in enriched if p.citation_count >= min_citations]
+            enriched.sort(key=lambda p: p.citation_count, reverse=True)
+            logger.info(
+                f"[arXiv+OA] '{query}': {len(raw_papers)} from arXiv, "
+                f"{len(enriched)} passed citation filter (>={min_citations})"
+            )
+            return enriched[:limit]
+
+        return raw_papers[:limit]
+
+    async def _search_arxiv(
+        self, query: str, year_from: int, year_to: int, limit: int
+    ) -> list[PaperMeta]:
+        """从 arXiv API 搜索论文"""
         papers = []
         batch_size = min(limit, 100)
         start = 0
@@ -47,7 +69,6 @@ class ArxivCrawler(BaseCrawler):
             if self.is_cancelled:
                 break
 
-            # arXiv API 返回 XML，我们用 httpx 获取后手动解析
             self.stats.requests_total += 1
             await self._smart_delay()
 
@@ -75,7 +96,6 @@ class ArxivCrawler(BaseCrawler):
                     break
 
                 for entry in entries:
-                    # 过滤年份
                     if entry.year and (entry.year < year_from or entry.year > year_to):
                         continue
                     papers.append(entry)
@@ -92,6 +112,60 @@ class ArxivCrawler(BaseCrawler):
                 break
 
         return papers[:limit]
+
+    async def _enrich_with_openalex(self, papers: list[PaperMeta]) -> list[PaperMeta]:
+        """通过 OpenAlex 批量查询引用量，丰富 arXiv 论文的引用数据"""
+        enriched = []
+
+        for paper in papers:
+            if self.is_cancelled:
+                break
+
+            # 优先用 DOI 查询，其次用 arXiv ID
+            filter_key = None
+            if paper.doi:
+                filter_key = f"doi:{paper.doi}"
+            elif paper.arxiv_id:
+                filter_key = f"ids.openalex:https://arxiv.org/abs/{paper.arxiv_id}"
+
+            if not filter_key:
+                enriched.append(paper)
+                continue
+
+            try:
+                await self._smart_delay()
+                self.stats.requests_total += 1
+
+                # 用标题搜索作为后备（更可靠）
+                search_title = paper.title[:100].replace('"', '')
+                resp = await self.client.get(
+                    f"{OPENALEX_API_BASE}/works",
+                    params={
+                        "search": search_title,
+                        "per_page": "1",
+                        "select": "id,cited_by_count,referenced_works",
+                    },
+                )
+
+                if resp.status_code == 200:
+                    self.stats.requests_success += 1
+                    data = resp.json()
+                    results = data.get("results", [])
+                    if results:
+                        oa_work = results[0]
+                        paper.citation_count = oa_work.get("cited_by_count", 0)
+                        paper.references = [
+                            r for r in (oa_work.get("referenced_works") or [])
+                        ][:200]
+                else:
+                    self.stats.requests_failed += 1
+
+            except Exception as e:
+                logger.debug(f"OpenAlex enrichment failed for '{paper.title[:50]}': {e}")
+
+            enriched.append(paper)
+
+        return enriched
 
     async def get_paper_details(self, paper_id: str) -> PaperMeta | None:
         """通过 arXiv ID 获取论文详情"""

@@ -36,7 +36,7 @@ const SUBDOMAIN_OPTIONS = [
 const SOURCE_OPTIONS = [
   { value: "openalex", label: "OpenAlex（推荐，快速免费）" },
   { value: "semantic_scholar", label: "Semantic Scholar（需API Key）" },
-  { value: "arxiv", label: "arXiv（预印本）" },
+  { value: "arxiv", label: "arXiv（前沿预印本，含引用交叉验证）" },
 ];
 
 const STATUS_MAP: Record<string, { color: string; label: string }> = {
