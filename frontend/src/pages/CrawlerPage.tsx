@@ -169,14 +169,18 @@ export default function CrawlerPage() {
                   style={{ width: 200 }}
                   placeholder="选择或输入关键词，如 protein folding"
                   allowClear
-                  filterOption={(inputValue, option) =>
-                    (option?.label as string ?? "")
-                      .toLowerCase()
-                      .includes(inputValue.toLowerCase()) ||
-                    (option?.value as string ?? "")
-                      .toLowerCase()
-                      .includes(inputValue.toLowerCase())
-                  }
+                  filterOption={(inputValue, option) => {
+                    // 如果当前输入值恰好是预设选项的 value，显示全部选项
+                    const isPreset = SUBDOMAIN_OPTIONS.some(
+                      (o) => o.value === inputValue
+                    );
+                    if (isPreset) return true;
+                    // 否则按输入文本模糊过滤
+                    const label = ((option?.label as string) ?? "").toLowerCase();
+                    const value = ((option?.value as string) ?? "").toLowerCase();
+                    const input = inputValue.toLowerCase();
+                    return label.includes(input) || value.includes(input);
+                  }}
                 />
               </Form.Item>
               <Form.Item name="year_from" label="起始年份">
