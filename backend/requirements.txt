@@ -38,6 +38,10 @@ PyMuPDF==1.25.*
 pydantic==2.10.*
 pydantic-settings==2.7.*
 
+# Crawlers
+arxiv==2.1.*
+aiohttp==3.11.*
+
 # Utilities
 httpx==0.28.*
 python-jose[cryptography]==3.3.*

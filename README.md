@@ -34,6 +34,13 @@
 - 生成关联假说并附带推理解释
 - 支持用户确认/否决 AI 建议，持续优化
 
+### 🕷️ 智能论文爬取
+- 多数据源自动爬取（Semantic Scholar、arXiv、DBLP、Papers with Code、OpenAlex）
+- 按引用量、顶会/顶刊、SOTA 记录等综合评分筛选开创性工作
+- 自动下载 Open Access 论文 PDF
+- 断点续爬、去重、限流，礼貌且可靠
+- 一键爬取预设方案（如：计算机科学近 10 年里程碑论文）
+
 ### 🔍 智能检索
 - 全文搜索 + 语义搜索
 - "给我找与 X 概念最相关的其他领域工作"
@@ -80,7 +87,8 @@ knowledge-nexus/
 ├── docs/                     # 文档
 │   ├── tech-stack.md         # 技术栈详解
 │   ├── architecture.md       # 架构设计
-│   └── api-design.md        # API 设计
+│   ├── api-design.md        # API 设计
+│   └── crawler-design.md   # 爬虫模块设计
 ├── backend/                  # 后端服务
 │   ├── app/
 │   │   ├── api/              # API 路由
