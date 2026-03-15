@@ -3,7 +3,7 @@ import CytoscapeComponent from "react-cytoscapejs";
 import type cytoscape from "cytoscape";
 import type { Core, EventObject } from "cytoscape";
 import {
-  Card, Empty, Select, Slider, Spin, Tag, Space, Typography, Input,
+  Button, Card, Empty, Select, Slider, Spin, Tag, Space, Typography, Input,
   Switch, AutoComplete, Tooltip,
 } from "antd";
 import { SearchOutlined, AimOutlined } from "@ant-design/icons";
@@ -136,7 +136,7 @@ export default function KnowledgeGraph() {
   const [minCitations, setMinCitations] = useState(0);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
-  const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
+  const [selectedDomains, setSelectedDomains] = useState<string[]>(["computer_science"]);
   const [crossDomainOnly, setCrossDomainOnly] = useState(false);
 
   const loadGraph = useCallback(() => {
@@ -434,6 +434,13 @@ export default function KnowledgeGraph() {
             label: DOMAIN_LABELS[d] || d,
           }))}
         />
+        <Button
+          size="small"
+          type={selectedDomains.length === 0 || selectedDomains.length === allDomains.length ? "primary" : "default"}
+          onClick={() => setSelectedDomains([])}
+        >
+          全部
+        </Button>
 
         {/* 跨域模式 */}
         <Tooltip title="只显示跨越不同领域的关联边">
