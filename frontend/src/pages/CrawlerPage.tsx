@@ -5,6 +5,7 @@ import {
   Form,
   InputNumber,
   Select,
+  AutoComplete,
   Table,
   Tag,
   Progress,
@@ -163,11 +164,19 @@ export default function CrawlerPage() {
                 />
               </Form.Item>
               <Form.Item name="subdomain" label="子领域">
-                <Select
+                <AutoComplete
                   options={SUBDOMAIN_OPTIONS}
-                  style={{ width: 150 }}
+                  style={{ width: 200 }}
+                  placeholder="选择或输入关键词，如 protein folding"
                   allowClear
-                  placeholder="全部"
+                  filterOption={(inputValue, option) =>
+                    (option?.label as string ?? "")
+                      .toLowerCase()
+                      .includes(inputValue.toLowerCase()) ||
+                    (option?.value as string ?? "")
+                      .toLowerCase()
+                      .includes(inputValue.toLowerCase())
+                  }
                 />
               </Form.Item>
               <Form.Item name="year_from" label="起始年份">

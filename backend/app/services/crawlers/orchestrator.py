@@ -216,8 +216,13 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
     try:
         # 确定搜索关键词
         queries = []
-        if task.subdomain and task.subdomain in CS_SUBDOMAIN_QUERIES:
-            queries = CS_SUBDOMAIN_QUERIES[task.subdomain]
+        if task.subdomain:
+            if task.subdomain in CS_SUBDOMAIN_QUERIES:
+                # 预设子领域 → 使用预定义关键词
+                queries = CS_SUBDOMAIN_QUERIES[task.subdomain]
+            else:
+                # 自定义文本输入 → 直接作为搜索关键词
+                queries = [task.subdomain.strip()]
         else:
             for sub_queries in CS_SUBDOMAIN_QUERIES.values():
                 queries.extend(sub_queries)
