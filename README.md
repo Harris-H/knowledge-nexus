@@ -302,7 +302,20 @@ LLM_MODEL=doubao-seed-2-0-lite-260215
 
 ## 📸 Screenshots
 
-> Coming soon — Graph visualization, AI Discovery panel, Knowledge management
+### 🕸️ Knowledge Graph Visualization
+Interactive graph powered by Cytoscape.js — domain-colored nodes, 13 relation types, search & filter toolbar.
+
+![Knowledge Graph](docs/screenshots/knowledge-graph.png)
+
+### 🤖 AI Discovery Chat
+ChatGPT-style conversational assistant with copy & regenerate buttons, structured data cards, and skill-based auto-routing.
+
+![AI Discovery](docs/screenshots/ai-discovery.png)
+
+### 📚 Knowledge Node Management
+Browse, filter, and manage 267+ knowledge nodes across 19 domains with type tags, summaries, and year metadata.
+
+![Knowledge Nodes](docs/screenshots/knowledge-nodes.png)
 
 ## 🗺️ Roadmap
 

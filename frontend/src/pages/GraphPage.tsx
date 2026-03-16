@@ -469,9 +469,9 @@ export default function KnowledgeGraph() {
         />
 
         {/* 引用过滤 */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 260 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 300, marginRight: 12 }}>
           <Text style={{ fontSize: 12, whiteSpace: "nowrap" }}>引用≥</Text>
-          <div style={{ width: 220, paddingRight: 8 }}>
+          <div style={{ flex: 1, paddingRight: 16 }}>
             <Slider
               min={0}
               max={50000}

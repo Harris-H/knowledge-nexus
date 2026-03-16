@@ -295,7 +295,20 @@ LLM_MODEL=doubao-seed-2-0-lite-260215
 
 ## 📸 截图
 
-> 即将添加 — 图谱可视化、AI 发现面板、知识管理界面
+### 🕸️ 知识图谱可视化
+基于 Cytoscape.js 的交互式图谱 — 节点按领域着色，支持 13 种关系类型、搜索与过滤工具栏。
+
+![知识图谱](docs/screenshots/knowledge-graph.png)
+
+### 🤖 AI 发现对话
+类 ChatGPT 对话式助手，支持复制与重新生成按钮、结构化数据卡片、技能自动路由。
+
+![AI 发现](docs/screenshots/ai-discovery.png)
+
+### 📚 知识节点管理
+浏览、过滤和管理 267+ 知识节点，覆盖 19 个领域，含类型标签、简介和年份信息。
+
+![知识节点](docs/screenshots/knowledge-nodes.png)
 
 ## 🗺️ 开发路线
 
