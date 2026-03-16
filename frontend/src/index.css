@@ -305,3 +305,35 @@ body {
   max-width: 860px;
   margin: 0 auto;
 }
+
+/* Copy button — hover to show, like ChatGPT/Claude */
+.chat-msg-actions {
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.chat-msg:hover .chat-msg-actions {
+  opacity: 1;
+}
+
+.chat-action-btn {
+  color: #999 !important;
+  font-size: 13px !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 6px !important;
+}
+
+.chat-action-btn:hover {
+  color: #333 !important;
+  background: #e8e8e8 !important;
+}
+
+.chat-action-btn-copied {
+  color: #52c41a !important;
+}
+
+.chat-action-btn-copied:hover {
+  color: #52c41a !important;
+}

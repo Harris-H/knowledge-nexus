@@ -6,6 +6,7 @@ import {
 import {
   SendOutlined, RobotOutlined, UserOutlined, BulbOutlined,
   ClearOutlined, SearchOutlined, ExperimentOutlined,
+  CopyOutlined, CheckOutlined,
 } from "@ant-design/icons";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -47,6 +48,7 @@ export default function AIDiscoveryPage() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [sending, setSending] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -103,6 +105,17 @@ export default function AIDiscoveryPage() {
     setMessages([]);
   };
 
+  const handleCopy = async (msg: DisplayMessage) => {
+    try {
+      await navigator.clipboard.writeText(msg.content);
+      setCopiedId(msg.id);
+      message.success("已复制到剪贴板");
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      message.error("复制失败");
+    }
+  };
+
   const showWelcome = messages.length === 0;
 
   return (
@@ -154,6 +167,19 @@ export default function AIDiscoveryPage() {
                   </div>
                   {msg.structured_data && (
                     <StructuredDataCard data={msg.structured_data} />
+                  )}
+                  {msg.role === "assistant" && (
+                    <div className="chat-msg-actions">
+                      <Tooltip title={copiedId === msg.id ? "已复制" : "复制"}>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={copiedId === msg.id ? <CheckOutlined /> : <CopyOutlined />}
+                          onClick={() => handleCopy(msg)}
+                          className={`chat-action-btn ${copiedId === msg.id ? "chat-action-btn-copied" : ""}`}
+                        />
+                      </Tooltip>
+                    </div>
                   )}
                 </>
               )}
