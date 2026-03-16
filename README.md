@@ -48,6 +48,10 @@ Human knowledge is scattered across disciplines, yet many concepts are deeply co
 - **Cross-Domain Discovery** — AI scans knowledge nodes to find 5–10 hidden cross-domain associations per run, with confidence scores and visual indicators
 - **Pair Analysis** — 6-dimensional deep analysis: structural analogy, causal links, complementarity, unified framework, and more
 - **Knowledge Derivation** — Select 2–10 nodes and derive abstract patterns, transfer ideas, missing links, and new hypotheses with feasibility ratings
+- **💬 Conversational AI Assistant** — ChatGPT-style multi-turn conversation interface for natural language exploration of the knowledge base, with skill-based auto-routing (search, discover, analyze, derive, summarize)
+  - One-click **copy** to clipboard for any AI response
+  - **Regenerate** (retry) button to re-generate any AI response, similar to GPT/Claude/Gemini — discards subsequent messages and retries from that point
+  - Structured data cards for search results, discoveries, pair analyses, and derivations rendered inline
 - Save discoveries as "pending review" or auto-confirm into the knowledge graph
 - Domain filtering to focus discovery on specific fields
 - Fuzzy matching with 3-level strategy for robust node identification

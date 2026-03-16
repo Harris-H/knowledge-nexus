@@ -6,7 +6,7 @@ import {
 import {
   SendOutlined, RobotOutlined, UserOutlined, BulbOutlined,
   ClearOutlined, SearchOutlined, ExperimentOutlined,
-  CopyOutlined, CheckOutlined,
+  CopyOutlined, CheckOutlined, ReloadOutlined,
 } from "@ant-design/icons";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -116,6 +116,55 @@ export default function AIDiscoveryPage() {
     }
   };
 
+  const handleRetry = async (msg: DisplayMessage) => {
+    if (sending) return;
+
+    // Find the user message right before this assistant message
+    const msgIndex = messages.findIndex((m) => m.id === msg.id);
+    if (msgIndex < 1) return;
+
+    let userMsgIndex = msgIndex - 1;
+    while (userMsgIndex >= 0 && messages[userMsgIndex].role !== "user") {
+      userMsgIndex--;
+    }
+    if (userMsgIndex < 0) return;
+
+    const userContent = messages[userMsgIndex].content;
+
+    // Keep messages up to (and including) the user message, discard the rest
+    const kept = messages.slice(0, userMsgIndex + 1);
+    const loadingMsg: DisplayMessage = { id: nextMsgId(), role: "assistant", content: "", loading: true };
+    setMessages([...kept, loadingMsg]);
+    setSending(true);
+
+    const apiMessages: ChatMessage[] = kept
+      .filter((m) => !m.loading)
+      .map((m) => ({ role: m.role, content: m.content }));
+
+    try {
+      const res = await aiApi.chat(apiMessages);
+      const assistantMsg: DisplayMessage = {
+        id: loadingMsg.id,
+        role: "assistant",
+        content: res.data.content,
+        skill_used: res.data.skill_used || undefined,
+        structured_data: res.data.structured_data || undefined,
+      };
+      setMessages((prev) => prev.map((m) => (m.id === loadingMsg.id ? assistantMsg : m)));
+    } catch (e: any) {
+      const errText = e?.response?.data?.detail || e?.message || "请求失败";
+      const errorMsg: DisplayMessage = {
+        id: loadingMsg.id,
+        role: "assistant",
+        content: `❌ 抱歉，出现了错误: ${errText}`,
+      };
+      setMessages((prev) => prev.map((m) => (m.id === loadingMsg.id ? errorMsg : m)));
+      message.error("请求失败");
+    } finally {
+      setSending(false);
+    }
+  };
+
   const showWelcome = messages.length === 0;
 
   return (
@@ -177,6 +226,16 @@ export default function AIDiscoveryPage() {
                           icon={copiedId === msg.id ? <CheckOutlined /> : <CopyOutlined />}
                           onClick={() => handleCopy(msg)}
                           className={`chat-action-btn ${copiedId === msg.id ? "chat-action-btn-copied" : ""}`}
+                        />
+                      </Tooltip>
+                      <Tooltip title="重新生成">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<ReloadOutlined />}
+                          onClick={() => handleRetry(msg)}
+                          disabled={sending}
+                          className="chat-action-btn"
                         />
                       </Tooltip>
                     </div>
