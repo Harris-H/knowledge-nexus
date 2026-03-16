@@ -469,9 +469,9 @@ export default function KnowledgeGraph() {
         />
 
         {/* 引用过滤 */}
-        <Space style={{ minWidth: 200 }}>
-          <Text style={{ fontSize: 12 }}>引用≥</Text>
-          <div style={{ width: 180 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 260 }}>
+          <Text style={{ fontSize: 12, whiteSpace: "nowrap" }}>引用≥</Text>
+          <div style={{ width: 220, paddingRight: 8 }}>
             <Slider
               min={0}
               max={50000}
@@ -485,7 +485,7 @@ export default function KnowledgeGraph() {
               }}
             />
           </div>
-        </Space>
+        </div>
 
         <Text type="secondary" style={{ marginLeft: "auto", fontSize: 12 }}>
           {filteredData.nodes.filter((n) => n.type === "paper").length} 论文
