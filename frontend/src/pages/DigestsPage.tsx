@@ -8,6 +8,8 @@ import {
   WarningOutlined, BulbOutlined, CheckCircleOutlined,
   ClockCircleOutlined,
 } from "@ant-design/icons";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { digestsApi } from "../api";
 import type { DomainDigest, CrossDomainAnalysis } from "../api";
 
@@ -333,7 +335,7 @@ export default function DigestsPage() {
       )}
 
       {/* 领域摘要列表 */}
-      <Divider orientation="left">各领域摘要详情</Divider>
+      <Divider orientation={"left" as any}>各领域摘要详情</Divider>
 
       {loading && (
         <Card style={{ textAlign: "center" }}><Spin size="large" /></Card>
@@ -403,15 +405,15 @@ export default function DigestsPage() {
                 padding: "16px 20px",
                 background: "#fafafa",
                 borderRadius: 8,
-                whiteSpace: "pre-wrap",
                 fontSize: 13,
                 lineHeight: 1.8,
                 maxHeight: 600,
                 overflow: "auto",
                 border: "1px solid #f0f0f0",
               }}
+              className="digest-markdown-content"
             >
-              {d.digest_markdown}
+              <Markdown remarkPlugins={[remarkGfm]}>{d.digest_markdown}</Markdown>
             </div>
           )}
         </Card>
