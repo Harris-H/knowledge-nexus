@@ -86,6 +86,9 @@ export default function AIDiscoveryPage() {
   const [crossAnalyzing, setCrossAnalyzing] = useState(false);
   const [crossResult, setCrossResult] = useState<CrossDomainAnalysis | null>(null);
 
+  // Tab 切换状态
+  const [activeTab, setActiveTab] = useState("discover");
+
   // 加载节点列表
   const loadNodes = useCallback(async () => {
     try {
@@ -111,6 +114,13 @@ export default function AIDiscoveryPage() {
       setDigestsLoading(false);
     }
   }, []);
+
+  // 切换到 digests 或 cross-domain Tab 时自动加载摘要列表
+  useEffect(() => {
+    if ((activeTab === "digests" || activeTab === "cross-domain") && digests.length === 0) {
+      loadDigests();
+    }
+  }, [activeTab, digests.length, loadDigests]);
 
   // 生成单个领域摘要
   const handleGenerateDigest = async (domainName: string) => {
@@ -249,7 +259,8 @@ export default function AIDiscoveryPage() {
       </Paragraph>
 
       <Tabs
-        defaultActiveKey="discover"
+        activeKey={activeTab}
+        onChange={setActiveTab}
         items={[
           {
             key: "discover",
