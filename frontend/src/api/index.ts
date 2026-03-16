@@ -201,6 +201,22 @@ export interface PairAnalysis {
   new_insight: string;
 }
 
+// ---- Chat ----
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ChatResponse {
+  role: "assistant";
+  content: string;
+  skill_used?: string;
+  structured_data?: {
+    type: string;
+    data: Record<string, unknown>;
+  };
+}
+
 export const aiApi = {
   discover: (limit = 8, domains?: string[]) =>
     api.post<DiscoverResult>("/ai/discover", { limit, domains: domains?.length ? domains : undefined }, { timeout: 120000 }),
@@ -216,6 +232,8 @@ export const aiApi = {
       total: number;
       domain_counts: Record<string, number>;
     }>("/ai/nodes", { params: domain ? { domain } : {} }),
+  chat: (messages: ChatMessage[]) =>
+    api.post<ChatResponse>("/ai/chat", { messages }, { timeout: 180000 }),
 };
 
 // ---- Domain Digests ----

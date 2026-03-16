@@ -14,6 +14,7 @@ from app.services.ai.analyzer import (
     analyze_pair,
     save_discovered_relations,
 )
+from app.services.ai.chat_service import process_chat
 
 router = APIRouter()
 
@@ -35,6 +36,15 @@ class AnalyzePairRequest(BaseModel):
 class SaveDiscoveriesRequest(BaseModel):
     discoveries: list[dict]
     auto_confirm: bool = False
+
+
+class ChatMessage(BaseModel):
+    role: str  # "user" | "assistant"
+    content: str
+
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage]
 
 
 @router.post("/discover")
@@ -149,3 +159,24 @@ async def api_list_all_nodes(
         d = item["domain"]
         domain_counts[d] = domain_counts.get(d, 0) + 1
     return {"items": items, "total": len(items), "domain_counts": domain_counts}
+
+
+@router.post("/chat")
+async def api_chat(
+    req: ChatRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    🤖 对话式 AI 助手。
+    接收消息历史，自动识别意图并调用对应技能，返回结构化结果。
+    """
+    if not req.messages:
+        raise HTTPException(status_code=400, detail="请提供至少一条消息")
+    try:
+        result = await process_chat(
+            db,
+            [{"role": m.role, "content": m.content} for m in req.messages],
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI 对话失败: {str(e)}")
