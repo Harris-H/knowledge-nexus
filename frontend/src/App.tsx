@@ -6,12 +6,14 @@ import {
   CloudDownloadOutlined,
   BulbOutlined,
   RobotOutlined,
+  BookOutlined,
 } from "@ant-design/icons";
 import GraphPage from "./pages/GraphPage";
 import PapersPage from "./pages/PapersPage";
 import CrawlerPage from "./pages/CrawlerPage";
 import KnowledgeNodesPage from "./pages/KnowledgeNodesPage";
 import AIDiscoveryPage from "./pages/AIDiscoveryPage";
+import DigestsPage from "./pages/DigestsPage";
 
 const { Header, Sider, Content } = Layout;
 
@@ -21,6 +23,11 @@ const MENU_ITEMS = [
     key: "/ai",
     icon: <RobotOutlined />,
     label: <Link to="/ai">AI 发现</Link>,
+  },
+  {
+    key: "/digests",
+    icon: <BookOutlined />,
+    label: <Link to="/digests">领域摘要</Link>,
   },
   {
     key: "/knowledge",
@@ -95,6 +102,7 @@ function AppLayout() {
           <Routes>
             <Route path="/" element={<GraphPage />} />
             <Route path="/ai" element={<AIDiscoveryPage />} />
+            <Route path="/digests" element={<DigestsPage />} />
             <Route path="/knowledge" element={<KnowledgeNodesPage />} />
             <Route path="/papers" element={<PapersPage />} />
             <Route path="/crawler" element={<CrawlerPage />} />

@@ -2,15 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Card, Button, Space, Tag, Typography, Spin, message, Popconfirm,
   Alert, Divider, Progress, List, Select, Tabs, AutoComplete,
-  Badge, Empty, Tooltip,
 } from "antd";
 import {
   ThunderboltOutlined, SaveOutlined, ExperimentOutlined, BulbOutlined,
-  CheckCircleOutlined, SearchOutlined, FileTextOutlined, BranchesOutlined,
-  ReloadOutlined, WarningOutlined,
+  CheckCircleOutlined, SearchOutlined,
 } from "@ant-design/icons";
-import { aiApi, digestsApi } from "../api";
-import type { AIDiscovery, DeriveResult, PairAnalysis, DomainDigest, CrossDomainAnalysis } from "../api";
+import { aiApi } from "../api";
+import type { AIDiscovery, DeriveResult, PairAnalysis } from "../api";
 
 const { Text, Title, Paragraph } = Typography;
 
@@ -74,21 +72,6 @@ export default function AIDiscoveryPage() {
   const [pairNodeA, setPairNodeA] = useState<string>("");
   const [pairNodeB, setPairNodeB] = useState<string>("");
 
-  // --- 领域摘要 ---
-  const [digests, setDigests] = useState<DomainDigest[]>([]);
-  const [digestsLoading, setDigestsLoading] = useState(false);
-  const [generatingDomain, setGeneratingDomain] = useState<string | null>(null);
-  const [expandedDigest, setExpandedDigest] = useState<string | null>(null);
-
-  // --- 跨域分析（基于摘要）---
-  const [crossDomainA, setCrossDomainA] = useState<string>("");
-  const [crossDomainB, setCrossDomainB] = useState<string>("");
-  const [crossAnalyzing, setCrossAnalyzing] = useState(false);
-  const [crossResult, setCrossResult] = useState<CrossDomainAnalysis | null>(null);
-
-  // Tab 切换状态
-  const [activeTab, setActiveTab] = useState("discover");
-
   // 加载节点列表
   const loadNodes = useCallback(async () => {
     try {
@@ -101,73 +84,6 @@ export default function AIDiscoveryPage() {
   }, []);
 
   useEffect(() => { loadNodes(); }, [loadNodes]);
-
-  // 加载领域摘要列表
-  const loadDigests = useCallback(async () => {
-    setDigestsLoading(true);
-    try {
-      const res = await digestsApi.list();
-      setDigests(res.data.items);
-    } catch (e) {
-      console.error("Failed to load digests:", e);
-    } finally {
-      setDigestsLoading(false);
-    }
-  }, []);
-
-  // 切换到 digests 或 cross-domain Tab 时自动加载摘要列表
-  useEffect(() => {
-    if ((activeTab === "digests" || activeTab === "cross-domain") && digests.length === 0) {
-      loadDigests();
-    }
-  }, [activeTab, digests.length, loadDigests]);
-
-  // 生成单个领域摘要
-  const handleGenerateDigest = async (domainName: string) => {
-    setGeneratingDomain(domainName);
-    try {
-      await digestsApi.generate(domainName);
-      message.success(`📝 ${DOMAIN_LABELS[domainName] || domainName} 摘要已生成`);
-      await loadDigests();
-    } catch (e: any) {
-      message.error(`生成失败: ${e?.response?.data?.detail || e?.message}`);
-    } finally {
-      setGeneratingDomain(null);
-    }
-  };
-
-  // 批量生成所有摘要
-  const handleGenerateAll = async () => {
-    setGeneratingDomain("__all__");
-    try {
-      const res = await digestsApi.generateAll();
-      message.success(`✅ 已生成 ${res.data.success}/${res.data.total} 个领域摘要`);
-      await loadDigests();
-    } catch (e: any) {
-      message.error(`批量生成失败: ${e?.response?.data?.detail || e?.message}`);
-    } finally {
-      setGeneratingDomain(null);
-    }
-  };
-
-  // 跨域分析（基于摘要）
-  const handleCrossDomainAnalysis = async () => {
-    if (!crossDomainA || !crossDomainB) {
-      message.warning("请选择两个领域");
-      return;
-    }
-    setCrossAnalyzing(true);
-    setCrossResult(null);
-    try {
-      const res = await digestsApi.crossDomainAnalysis(crossDomainA, crossDomainB);
-      setCrossResult(res.data);
-      message.success("🔗 跨域分析完成！");
-    } catch (e: any) {
-      message.error(`分析失败: ${e?.response?.data?.detail || e?.message}`);
-    } finally {
-      setCrossAnalyzing(false);
-    }
-  };
 
   // --- 发现关联 ---
   const handleDiscover = async () => {
@@ -259,8 +175,7 @@ export default function AIDiscoveryPage() {
       </Paragraph>
 
       <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
+        defaultActiveKey="discover"
         items={[
           {
             key: "discover",
@@ -499,274 +414,6 @@ export default function AIDiscoveryPage() {
                           <Card key={i} size="small" style={{ marginBottom: 8 }} title={<Space><Tag color={FEASIBILITY_COLORS[h.impact]}>影响: {h.impact}</Tag>假设 {i + 1}</Space>}>
                             <Paragraph>{h.hypothesis}</Paragraph>
                             <Text type="secondary">验证方法: {h.evidence_needed}</Text>
-                          </Card>
-                        ))}
-                      </>
-                    )}
-                  </Card>
-                )}
-              </>
-            ),
-          },
-          {
-            key: "digests",
-            label: "📋 领域摘要",
-            children: (
-              <>
-                <Card size="small" style={{ marginBottom: 16 }}>
-                  <Space>
-                    <Button
-                      icon={<ReloadOutlined />}
-                      onClick={loadDigests}
-                      loading={digestsLoading}
-                    >
-                      刷新列表
-                    </Button>
-                    <Popconfirm
-                      title="将为所有领域重新生成摘要，可能需要几分钟"
-                      onConfirm={handleGenerateAll}
-                    >
-                      <Button
-                        type="primary"
-                        icon={<FileTextOutlined />}
-                        loading={generatingDomain === "__all__"}
-                      >
-                        一键生成全部摘要
-                      </Button>
-                    </Popconfirm>
-                  </Space>
-                </Card>
-
-                {digestsLoading && (
-                  <Card style={{ textAlign: "center" }}><Spin size="large" /></Card>
-                )}
-
-                {!digestsLoading && digests.length === 0 && (
-                  <Empty description="暂无领域数据，请先添加知识节点或论文">
-                    <Button type="primary" onClick={loadDigests}>刷新</Button>
-                  </Empty>
-                )}
-
-                {digests.map((d) => (
-                  <Card
-                    key={d.name}
-                    size="small"
-                    style={{ marginBottom: 12 }}
-                    title={
-                      <Space>
-                        <Text strong>{DOMAIN_LABELS[d.name] || d.name}</Text>
-                        {d.digest_markdown ? (
-                          <Tag color="green">v{d.digest_version}</Tag>
-                        ) : (
-                          <Tag color="default">未生成</Tag>
-                        )}
-                        {d.digest_is_stale && (
-                          <Tooltip title="领域数据已变更，建议重新生成摘要">
-                            <Tag icon={<WarningOutlined />} color="warning">已过期</Tag>
-                          </Tooltip>
-                        )}
-                      </Space>
-                    }
-                    extra={
-                      <Space>
-                        {d.digest_markdown && (
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            {d.digest_node_count}节点 · {d.digest_paper_count}论文 · {d.digest_relation_count}关联
-                          </Text>
-                        )}
-                        <Button
-                          size="small"
-                          icon={<ReloadOutlined />}
-                          loading={generatingDomain === d.name}
-                          onClick={() => handleGenerateDigest(d.name)}
-                        >
-                          {d.digest_markdown ? "重新生成" : "生成摘要"}
-                        </Button>
-                        {d.digest_markdown && (
-                          <Button
-                            size="small"
-                            type={expandedDigest === d.name ? "primary" : "default"}
-                            onClick={() => setExpandedDigest(expandedDigest === d.name ? null : d.name)}
-                          >
-                            {expandedDigest === d.name ? "收起" : "查看"}
-                          </Button>
-                        )}
-                      </Space>
-                    }
-                  >
-                    {expandedDigest === d.name && d.digest_markdown && (
-                      <div
-                        style={{
-                          padding: "12px 16px",
-                          background: "#fafafa",
-                          borderRadius: 8,
-                          whiteSpace: "pre-wrap",
-                          fontSize: 13,
-                          lineHeight: 1.8,
-                          maxHeight: 600,
-                          overflow: "auto",
-                        }}
-                      >
-                        {d.digest_markdown}
-                      </div>
-                    )}
-                  </Card>
-                ))}
-              </>
-            ),
-          },
-          {
-            key: "cross-domain",
-            label: "🔗 跨域分析（摘要）",
-            children: (
-              <>
-                <Alert
-                  type="info"
-                  showIcon
-                  icon={<BranchesOutlined />}
-                  message="基于领域摘要的快速跨域分析"
-                  description="选择两个领域，AI 将基于预生成的领域摘要进行跨域关联分析。相比逐个节点分析，速度更快、视角更宏观。"
-                  style={{ marginBottom: 16 }}
-                />
-
-                <Card size="small" style={{ marginBottom: 16 }}>
-                  <Space direction="vertical" style={{ width: "100%" }}>
-                    <Text strong>选择两个领域进行跨域分析：</Text>
-                    <Space style={{ width: "100%" }} direction="vertical">
-                      <Select
-                        showSearch
-                        placeholder="领域 A"
-                        value={crossDomainA || undefined}
-                        onChange={setCrossDomainA}
-                        style={{ width: "100%" }}
-                        options={Object.entries(domainCounts).map(([d, c]) => ({
-                          value: d,
-                          label: `${DOMAIN_LABELS[d] || d} (${c}个节点)`,
-                        }))}
-                        filterOption={(input, option) =>
-                          (option?.label as string || "").toLowerCase().includes(input.toLowerCase())
-                        }
-                      />
-                      <Select
-                        showSearch
-                        placeholder="领域 B"
-                        value={crossDomainB || undefined}
-                        onChange={setCrossDomainB}
-                        style={{ width: "100%" }}
-                        options={Object.entries(domainCounts)
-                          .filter(([d]) => d !== crossDomainA)
-                          .map(([d, c]) => ({
-                            value: d,
-                            label: `${DOMAIN_LABELS[d] || d} (${c}个节点)`,
-                          }))}
-                        filterOption={(input, option) =>
-                          (option?.label as string || "").toLowerCase().includes(input.toLowerCase())
-                        }
-                      />
-                    </Space>
-                    <Button
-                      type="primary"
-                      icon={<BranchesOutlined />}
-                      loading={crossAnalyzing}
-                      onClick={handleCrossDomainAnalysis}
-                      disabled={!crossDomainA || !crossDomainB}
-                    >
-                      开始跨域分析
-                    </Button>
-                  </Space>
-                </Card>
-
-                {crossAnalyzing && (
-                  <Card style={{ textAlign: "center" }}>
-                    <Spin size="large" />
-                    <Paragraph style={{ marginTop: 16 }}>
-                      AI 正在基于领域摘要分析跨域关联...
-                    </Paragraph>
-                  </Card>
-                )}
-
-                {crossResult && (
-                  <Card title={`🔗 ${DOMAIN_LABELS[crossResult.domain_a] || crossResult.domain_a} ↔ ${DOMAIN_LABELS[crossResult.domain_b] || crossResult.domain_b} 跨域分析`} style={{ marginBottom: 16 }}>
-                    {crossResult.summary && (
-                      <>
-                        <Alert type="success" message="📌 核心发现" description={crossResult.summary} style={{ marginBottom: 16 }} />
-                        <Divider />
-                      </>
-                    )}
-
-                    {crossResult.analogies?.length > 0 && (
-                      <>
-                        <Title level={5}>🪞 结构类比</Title>
-                        {crossResult.analogies.map((a, i) => (
-                          <Card key={i} size="small" style={{ marginBottom: 8 }}>
-                            <Space style={{ marginBottom: 8 }}>
-                              <Tag color="blue">{a.concept_a}</Tag>
-                              <Text type="secondary">≈</Text>
-                              <Tag color="purple">{a.concept_b}</Tag>
-                              <Tag>{a.depth}</Tag>
-                            </Space>
-                            <Paragraph style={{ margin: 0, fontSize: 13 }}>{a.description}</Paragraph>
-                          </Card>
-                        ))}
-                        <Divider />
-                      </>
-                    )}
-
-                    {crossResult.transfer_ideas?.length > 0 && (
-                      <>
-                        <Title level={5}>🔄 知识迁移方向</Title>
-                        <List
-                          dataSource={crossResult.transfer_ideas}
-                          renderItem={(item) => (
-                            <List.Item>
-                              <List.Item.Meta
-                                title={
-                                  <Space>
-                                    <Tag>{item.from_domain}</Tag>
-                                    <Text>→</Text>
-                                    <Tag>{item.to_domain}</Tag>
-                                    <Tag color={FEASIBILITY_COLORS[item.feasibility]}>{item.feasibility}</Tag>
-                                  </Space>
-                                }
-                                description={
-                                  <>
-                                    <Text type="secondary">源方法: {item.source_method} → 目标: {item.target_application}</Text>
-                                    <br />
-                                    {item.idea}
-                                  </>
-                                }
-                              />
-                            </List.Item>
-                          )}
-                        />
-                        <Divider />
-                      </>
-                    )}
-
-                    {crossResult.unified_patterns?.length > 0 && (
-                      <>
-                        <Title level={5}><BulbOutlined /> 统一模式</Title>
-                        {crossResult.unified_patterns.map((p, i) => (
-                          <Card key={i} size="small" style={{ marginBottom: 8 }}>
-                            <Title level={5} style={{ margin: 0 }}>{p.pattern_name}</Title>
-                            <Paragraph style={{ fontSize: 13 }}>{p.description}</Paragraph>
-                            <Space direction="vertical" style={{ width: "100%" }}>
-                              <Text type="secondary">在 {DOMAIN_LABELS[crossResult.domain_a] || crossResult.domain_a} 中: {p.in_domain_a}</Text>
-                              <Text type="secondary">在 {DOMAIN_LABELS[crossResult.domain_b] || crossResult.domain_b} 中: {p.in_domain_b}</Text>
-                            </Space>
-                          </Card>
-                        ))}
-                        <Divider />
-                      </>
-                    )}
-
-                    {crossResult.new_hypotheses?.length > 0 && (
-                      <>
-                        <Title level={5}>🔬 新研究假设</Title>
-                        {crossResult.new_hypotheses.map((h, i) => (
-                          <Card key={i} size="small" style={{ marginBottom: 8 }} title={<Space><Tag color={FEASIBILITY_COLORS[h.impact]}>影响: {h.impact}</Tag>假设 {i + 1}</Space>}>
-                            <Paragraph>{h.hypothesis}</Paragraph>
-                            <Text type="secondary">推理依据: {h.basis}</Text>
                           </Card>
                         ))}
                       </>
