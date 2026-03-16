@@ -218,4 +218,73 @@ export const aiApi = {
     }>("/ai/nodes", { params: domain ? { domain } : {} }),
 };
 
+// ---- Domain Digests ----
+export interface DomainDigest {
+  id: string;
+  name: string;
+  description?: string;
+  digest_markdown?: string;
+  digest_version: number;
+  digest_node_count: number;
+  digest_paper_count: number;
+  digest_relation_count: number;
+  digest_generated_at?: string;
+  digest_is_stale: boolean;
+}
+
+export interface DomainDigestList {
+  items: DomainDigest[];
+  total: number;
+}
+
+export interface CrossDomainAnalysis {
+  domain_a: string;
+  domain_b: string;
+  analogies: Array<{
+    concept_a: string;
+    concept_b: string;
+    description: string;
+    depth: string;
+  }>;
+  transfer_ideas: Array<{
+    from_domain: string;
+    to_domain: string;
+    source_method: string;
+    target_application: string;
+    idea: string;
+    feasibility: string;
+  }>;
+  new_hypotheses: Array<{
+    hypothesis: string;
+    basis: string;
+    impact: string;
+  }>;
+  unified_patterns: Array<{
+    pattern_name: string;
+    description: string;
+    in_domain_a: string;
+    in_domain_b: string;
+  }>;
+  summary: string;
+}
+
+export const digestsApi = {
+  list: () =>
+    api.get<DomainDigestList>("/digests/"),
+  get: (domainName: string) =>
+    api.get<DomainDigest>(`/digests/${domainName}`),
+  generate: (domainName: string) =>
+    api.post<DomainDigest>(`/digests/${domainName}/generate`, {}, { timeout: 120000 }),
+  generateAll: () =>
+    api.post<{ total: number; success: number; failed: number; details: Array<Record<string, unknown>> }>(
+      "/digests/generate-all", {}, { timeout: 300000 }
+    ),
+  crossDomainAnalysis: (domainA: string, domainB: string) =>
+    api.post<CrossDomainAnalysis>(
+      "/digests/cross-domain-analysis",
+      { domain_a: domainA, domain_b: domainB },
+      { timeout: 120000 }
+    ),
+};
+
 export default api;

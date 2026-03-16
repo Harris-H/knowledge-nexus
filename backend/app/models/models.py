@@ -85,6 +85,15 @@ class Domain(Base):
     description: Mapped[str | None] = mapped_column(Text)
     parent_id: Mapped[str | None] = mapped_column(String(32), ForeignKey("domains.id"))
 
+    # 领域摘要（AI 生成的 Markdown 格式知识图谱总结）
+    digest_markdown: Mapped[str | None] = mapped_column(Text)
+    digest_version: Mapped[int] = mapped_column(Integer, default=0)
+    digest_node_count: Mapped[int] = mapped_column(Integer, default=0)
+    digest_paper_count: Mapped[int] = mapped_column(Integer, default=0)
+    digest_relation_count: Mapped[int] = mapped_column(Integer, default=0)
+    digest_generated_at: Mapped[datetime | None] = mapped_column(DateTime)
+    digest_is_stale: Mapped[bool] = mapped_column(default=False)
+
     papers: Mapped[list["Paper"]] = relationship(back_populates="domain")
     children: Mapped[list["Domain"]] = relationship(back_populates="parent")
     parent: Mapped["Domain | None"] = relationship(

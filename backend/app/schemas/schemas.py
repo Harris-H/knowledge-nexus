@@ -161,3 +161,37 @@ class KnowledgeNodeResponse(BaseModel):
 class KnowledgeNodeList(BaseModel):
     items: list[KnowledgeNodeResponse]
     total: int
+
+
+# ---- Domain Digest ----
+
+class DomainDigestResponse(BaseModel):
+    id: str
+    name: str
+    description: str | None = None
+    digest_markdown: str | None = None
+    digest_version: int = 0
+    digest_node_count: int = 0
+    digest_paper_count: int = 0
+    digest_relation_count: int = 0
+    digest_generated_at: datetime | None = None
+    digest_is_stale: bool = False
+
+    model_config = {"from_attributes": True}
+
+class DomainDigestList(BaseModel):
+    items: list[DomainDigestResponse]
+    total: int
+
+class CrossDomainAnalysisRequest(BaseModel):
+    domain_a: str  # domain name, e.g. "biology"
+    domain_b: str  # domain name, e.g. "computer_science"
+
+class CrossDomainAnalysisResponse(BaseModel):
+    domain_a: str
+    domain_b: str
+    analogies: list[dict] = []
+    transfer_ideas: list[dict] = []
+    new_hypotheses: list[dict] = []
+    unified_patterns: list[dict] = []
+    summary: str = ""
