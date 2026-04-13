@@ -215,6 +215,202 @@ class OpenAlexCrawler(BaseCrawler):
             fields_of_study=fields,
         )
 
+    # ──────────────────────────────────────────────
+    # Elite Profile: 按作者 / 机构定向搜索
+    # ──────────────────────────────────────────────
+
+    async def search_by_author(
+        self, author_id: str, year_from: int = 2016, year_to: int = 2026,
+        min_citations: int = 0, limit: int = 100,
+    ) -> list[PaperMeta]:
+        """按 OpenAlex author ID 搜索该作者的论文"""
+        papers: list[PaperMeta] = []
+        page = 1
+        per_page = min(limit, 200)
+
+        while len(papers) < limit:
+            if self.is_cancelled:
+                break
+
+            filter_parts = [
+                f"authorships.author.id:{author_id}",
+                f"publication_year:{year_from}-{year_to}",
+            ]
+            if min_citations > 0:
+                filter_parts.append(f"cited_by_count:{min_citations}-")
+
+            params: dict[str, str] = {
+                "filter": ",".join(filter_parts),
+                "sort": "cited_by_count:desc",
+                "per_page": str(per_page),
+                "page": str(page),
+            }
+            if self.email:
+                params["mailto"] = self.email
+
+            logger.info(f"[OpenAlex] Author search: {author_id} page={page}")
+            data = await self.fetch(f"{OPENALEX_API_BASE}/works", params=params)
+            if not data or "results" not in data:
+                break
+
+            results = data["results"]
+            if not results:
+                break
+
+            for item in results:
+                paper = self._parse_work(item)
+                if paper:
+                    papers.append(paper)
+
+            page += 1
+            if len(results) < per_page or len(papers) >= limit:
+                break
+
+        return papers[:limit]
+
+    async def search_by_institution(
+        self, institution_id: str, year_from: int = 2016, year_to: int = 2026,
+        min_citations: int = 0, limit: int = 100,
+    ) -> list[PaperMeta]:
+        """按 OpenAlex institution ID 搜索该机构的论文"""
+        papers: list[PaperMeta] = []
+        page = 1
+        per_page = min(limit, 200)
+
+        while len(papers) < limit:
+            if self.is_cancelled:
+                break
+
+            filter_parts = [
+                f"authorships.institutions.id:{institution_id}",
+                f"publication_year:{year_from}-{year_to}",
+            ]
+            if min_citations > 0:
+                filter_parts.append(f"cited_by_count:{min_citations}-")
+
+            params: dict[str, str] = {
+                "filter": ",".join(filter_parts),
+                "sort": "cited_by_count:desc",
+                "per_page": str(per_page),
+                "page": str(page),
+            }
+            if self.email:
+                params["mailto"] = self.email
+
+            logger.info(f"[OpenAlex] Institution search: {institution_id} page={page}")
+            data = await self.fetch(f"{OPENALEX_API_BASE}/works", params=params)
+            if not data or "results" not in data:
+                break
+
+            results = data["results"]
+            if not results:
+                break
+
+            for item in results:
+                paper = self._parse_work(item)
+                if paper:
+                    papers.append(paper)
+
+            page += 1
+            if len(results) < per_page or len(papers) >= limit:
+                break
+
+        return papers[:limit]
+
+    async def discover_top_authors(
+        self, institution_id: str, min_h_index: int = 50, limit: int = 50,
+    ) -> list[dict]:
+        """发现某机构的高 h-index 学者
+
+        返回: [{"id": "A...", "name": "...", "h_index": N, "cited_by_count": N, "works_count": N}, ...]
+        """
+        params: dict[str, str] = {
+            "filter": f"last_known_institutions.id:{institution_id},summary_stats.h_index:>{min_h_index}",
+            "sort": "cited_by_count:desc",
+            "per_page": str(min(limit, 200)),
+            "select": "id,display_name,summary_stats,cited_by_count,works_count",
+        }
+        if self.email:
+            params["mailto"] = self.email
+
+        logger.info(f"[OpenAlex] Discover authors: institution={institution_id}, h>{min_h_index}")
+        data = await self.fetch(f"{OPENALEX_API_BASE}/authors", params=params)
+        if not data or "results" not in data:
+            return []
+
+        authors = []
+        for a in data["results"]:
+            stats = a.get("summary_stats") or {}
+            authors.append({
+                "id": a.get("id", "").replace("https://openalex.org/", ""),
+                "name": a.get("display_name", ""),
+                "h_index": stats.get("h_index", 0),
+                "cited_by_count": a.get("cited_by_count", 0),
+                "works_count": a.get("works_count", 0),
+            })
+        return authors[:limit]
+
+    async def resolve_author_id(self, name: str) -> list[dict]:
+        """按姓名搜索作者，返回匹配列表（供用户选择）
+
+        返回: [{"id": "A...", "name": "...", "h_index": N, "affiliation": "...", "cited_by_count": N}, ...]
+        """
+        params: dict[str, str] = {
+            "search": name,
+            "per_page": "10",
+            "select": "id,display_name,summary_stats,cited_by_count,last_known_institutions",
+        }
+        if self.email:
+            params["mailto"] = self.email
+
+        logger.info(f"[OpenAlex] Resolve author: '{name}'")
+        data = await self.fetch(f"{OPENALEX_API_BASE}/authors", params=params)
+        if not data or "results" not in data:
+            return []
+
+        results = []
+        for a in data["results"]:
+            stats = a.get("summary_stats") or {}
+            institutions = a.get("last_known_institutions") or []
+            affiliation = institutions[0].get("display_name", "") if institutions else ""
+            results.append({
+                "id": a.get("id", "").replace("https://openalex.org/", ""),
+                "name": a.get("display_name", ""),
+                "h_index": stats.get("h_index", 0),
+                "affiliation": affiliation,
+                "cited_by_count": a.get("cited_by_count", 0),
+            })
+        return results
+
+    async def resolve_institution_id(self, name: str) -> list[dict]:
+        """按名称搜索机构，返回匹配列表
+
+        返回: [{"id": "I...", "name": "...", "country": "...", "works_count": N, "cited_by_count": N}, ...]
+        """
+        params: dict[str, str] = {
+            "search": name,
+            "per_page": "10",
+            "select": "id,display_name,country_code,works_count,cited_by_count",
+        }
+        if self.email:
+            params["mailto"] = self.email
+
+        logger.info(f"[OpenAlex] Resolve institution: '{name}'")
+        data = await self.fetch(f"{OPENALEX_API_BASE}/institutions", params=params)
+        if not data or "results" not in data:
+            return []
+
+        results = []
+        for inst in data["results"]:
+            results.append({
+                "id": inst.get("id", "").replace("https://openalex.org/", ""),
+                "name": inst.get("display_name", ""),
+                "country": inst.get("country_code", ""),
+                "works_count": inst.get("works_count", 0),
+                "cited_by_count": inst.get("cited_by_count", 0),
+            })
+        return results
+
     @staticmethod
     def _reconstruct_abstract(inverted_index: dict | None) -> str | None:
         """从 OpenAlex 倒排索引重建摘要文本"""

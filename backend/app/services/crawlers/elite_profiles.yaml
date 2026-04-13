@@ -1,0 +1,176 @@
+# Elite Profiles: 顶级学术机构 & 研究者（含已验证的 OpenAlex ID）
+# 用于定向爬取高质量论文
+#
+# OpenAlex ID 格式:
+#   机构: I + 数字 (e.g. I97018004)
+#   作者: A + 数字 (e.g. A5100450462)
+
+institutions:
+  # 北美顶级高校
+  - id: "I97018004"
+    name: "Stanford University"
+    country: "US"
+    tags: ["AI", "NLP", "CV", "Systems"]
+  - id: "I63966007"
+    name: "Massachusetts Institute of Technology"
+    country: "US"
+    tags: ["AI", "Robotics", "Systems"]
+  - id: "I130769515"
+    name: "Carnegie Mellon University"
+    country: "US"
+    tags: ["AI", "ML", "Robotics", "NLP"]
+  - id: "I136199984"
+    name: "University of California, Berkeley"
+    country: "US"
+    tags: ["AI", "RL", "Systems"]
+  - id: "I27837315"
+    name: "Princeton University"
+    country: "US"
+    tags: ["AI", "Theory"]
+  - id: "I141945490"
+    name: "University of Washington"
+    country: "US"
+    tags: ["NLP", "CV", "Systems"]
+
+  # 工业研究实验室
+  - id: "I1303153112"
+    name: "Google DeepMind"
+    country: "UK"
+    tags: ["AI", "RL", "Generative"]
+  - id: "I2778813966"
+    name: "OpenAI"
+    country: "US"
+    tags: ["LLM", "Alignment", "Generative"]
+  - id: "I4210108722"
+    name: "Meta AI"
+    country: "US"
+    tags: ["NLP", "CV", "Generative"]
+  - id: "I1334687557"
+    name: "Microsoft Research"
+    country: "US"
+    tags: ["AI", "NLP", "Systems"]
+  - id: "I4200000054"
+    name: "Google Research"
+    country: "US"
+    tags: ["AI", "NLP", "Systems"]
+
+  # 中国顶级高校
+  - id: "I136199984"
+    name: "Tsinghua University"
+    country: "CN"
+    tags: ["AI", "NLP", "CV"]
+  - id: "I184490438"
+    name: "Peking University"
+    country: "CN"
+    tags: ["AI", "NLP"]
+  - id: "I204722669"
+    name: "Zhejiang University"
+    country: "CN"
+    tags: ["AI", "CV"]
+
+  # 欧洲
+  - id: "I86987016"
+    name: "University of Oxford"
+    country: "UK"
+    tags: ["AI", "NLP"]
+  - id: "I205783295"
+    name: "University of Cambridge"
+    country: "UK"
+    tags: ["AI", "ML"]
+  - id: "I114090438"
+    name: "ETH Zurich"
+    country: "CH"
+    tags: ["CV", "Robotics", "Systems"]
+
+  # 加拿大
+  - id: "I185261750"
+    name: "University of Toronto"
+    country: "CA"
+    tags: ["AI", "ML", "NLP"]
+  - id: "I70931966"
+    name: "University of Montreal"
+    country: "CA"
+    tags: ["AI", "ML"]
+
+researchers:
+  # AI / Deep Learning 先驱
+  - id: "A5100450462"
+    name: "Li Fei-Fei"
+    affiliation: "Stanford University"
+    tags: ["CV", "AI"]
+  - id: "A5048491430"
+    name: "Geoffrey Hinton"
+    affiliation: "University of Toronto"
+    tags: ["Deep Learning", "Neural Networks"]
+  - id: "A5073272612"
+    name: "Yoshua Bengio"
+    affiliation: "University of Montreal"
+    tags: ["Deep Learning", "Generative"]
+  - id: "A5014726161"
+    name: "Yann LeCun"
+    affiliation: "Meta AI / NYU"
+    tags: ["Deep Learning", "CV"]
+
+  # NLP / LLM
+  - id: "A5035954362"
+    name: "Christopher Manning"
+    affiliation: "Stanford University"
+    tags: ["NLP", "LLM"]
+  - id: "A5058870459"
+    name: "Percy Liang"
+    affiliation: "Stanford University"
+    tags: ["NLP", "LLM", "Benchmark"]
+
+  # RL / Robotics
+  - id: "A5003442464"
+    name: "Pieter Abbeel"
+    affiliation: "UC Berkeley"
+    tags: ["RL", "Robotics"]
+  - id: "A5090417855"
+    name: "Sergey Levine"
+    affiliation: "UC Berkeley"
+    tags: ["RL", "Robotics"]
+
+  # Generative Models
+  - id: "A5068889925"
+    name: "Ian Goodfellow"
+    affiliation: "DeepMind"
+    tags: ["GAN", "Generative"]
+
+  # CV
+  - id: "A5069093804"
+    name: "Kaiming He"
+    affiliation: "MIT"
+    tags: ["CV", "ResNet"]
+  - id: "A5080835974"
+    name: "Ross Girshick"
+    affiliation: "Meta AI"
+    tags: ["CV", "Object Detection"]
+
+# 预设爬取配置
+presets:
+  top_ai_labs:
+    description: "顶级 AI 实验室最新高引论文"
+    institutions: ["I1303153112", "I2778813966", "I4210108722", "I1334687557"]
+    min_citations: 50
+    min_h_index: 50
+    year_from: 2022
+
+  nlp_leaders:
+    description: "NLP/LLM 领域顶级学者论文"
+    researchers: ["A5035954362", "A5058870459"]
+    institutions: ["I2778813966", "I4210108722"]
+    min_citations: 100
+    year_from: 2020
+
+  deep_learning_pioneers:
+    description: "深度学习三巨头 + 顶级学者"
+    researchers: ["A5048491430", "A5073272612", "A5014726161", "A5100450462", "A5069093804"]
+    min_citations: 200
+    year_from: 2018
+
+  china_top_cs:
+    description: "中国顶级高校 CS 高引论文"
+    institutions: ["I136199984", "I184490438", "I204722669"]
+    min_citations: 100
+    year_from: 2020

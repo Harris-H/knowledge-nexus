@@ -163,6 +163,7 @@ class CrawlTask(Base):
     __tablename__ = "crawl_tasks"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=gen_id)
+    mode: Mapped[str] = mapped_column(String(50), default="keyword")
     domain: Mapped[str] = mapped_column(String(100))
     subdomain: Mapped[str | None] = mapped_column(String(100))
     source: Mapped[str] = mapped_column(String(50), default="openalex")
@@ -170,6 +171,10 @@ class CrawlTask(Base):
     year_to: Mapped[int] = mapped_column(Integer)
     min_citations: Mapped[int] = mapped_column(Integer, default=100)
     max_papers: Mapped[int] = mapped_column(Integer, default=100)
+    # Elite Profile 扩展字段
+    author_id: Mapped[str | None] = mapped_column(String(100))
+    institution_id: Mapped[str | None] = mapped_column(String(100))
+    preset_name: Mapped[str | None] = mapped_column(String(100))
     status: Mapped[str] = mapped_column(String(20), default="queued")
     searched: Mapped[int] = mapped_column(Integer, default=0)
     candidates: Mapped[int] = mapped_column(Integer, default=0)

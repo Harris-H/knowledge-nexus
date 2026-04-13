@@ -86,6 +86,7 @@ class RelationCreate(BaseModel):
 # ---- Crawler ----
 
 class CrawlRequest(BaseModel):
+    mode: str = "keyword"  # keyword / author / institution / elite_preset
     domain: str = "computer_science"
     subdomain: str | None = None
     year_from: int = 2016
@@ -94,13 +95,21 @@ class CrawlRequest(BaseModel):
     source: str = "openalex"  # openalex（默认，快速免费）/ semantic_scholar / arxiv
     max_papers: int = 100
     auto_download_pdf: bool = False
+    # Elite Profile 扩展字段
+    author_id: str | None = None        # mode=author 时使用，OpenAlex author ID
+    institution_id: str | None = None   # mode=institution 时使用，OpenAlex institution ID
+    preset_name: str | None = None      # mode=elite_preset 时使用，预设配置名称
 
 class CrawlTaskResponse(BaseModel):
     id: str
     status: str
+    mode: str = "keyword"
     domain: str
     subdomain: str | None = None
     source: str = "openalex"
+    author_id: str | None = None
+    institution_id: str | None = None
+    preset_name: str | None = None
     searched: int = 0
     candidates: int = 0
     imported: int = 0

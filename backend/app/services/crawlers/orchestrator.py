@@ -1,7 +1,9 @@
 import logging
 import traceback
 from datetime import datetime
+from pathlib import Path
 
+import yaml
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -75,6 +77,22 @@ def _create_crawler(source: str = "openalex") -> BaseCrawler:
         email=getattr(settings, "OPENALEX_EMAIL", ""),
         rate_limit=0.5,
     )
+
+
+def _load_elite_profiles() -> dict:
+    """加载 elite_profiles.yaml 预设配置"""
+    yaml_path = Path(__file__).parent / "elite_profiles.yaml"
+    if not yaml_path.exists():
+        logger.warning(f"Elite profiles not found: {yaml_path}")
+        return {}
+    with open(yaml_path, encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def get_elite_presets() -> dict[str, dict]:
+    """返回可用的预设配置列表（供 API 展示）"""
+    profiles = _load_elite_profiles()
+    return profiles.get("presets", {})
 
 
 def compute_impact_score(paper: PaperMeta) -> float:
@@ -202,7 +220,7 @@ def cancel_crawl_task(task_id: str) -> bool:
 
 
 async def run_crawl_task(task_id: str, db: AsyncSession):
-    """执行爬取任务"""
+    """执行爬取任务（支持 keyword / author / institution / elite_preset 模式）"""
     result = await db.execute(select(CrawlTask).where(CrawlTask.id == task_id))
     task = result.scalar_one_or_none()
     if not task:
@@ -213,8 +231,10 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
     task.started_at = datetime.utcnow()
     await db.commit()
 
+    mode = getattr(task, "mode", "keyword") or "keyword"
+
     logger.info(
-        f"🚀 [Task {task_id}] 开始爬取 | "
+        f"🚀 [Task {task_id}] 开始爬取 | mode={mode} | "
         f"领域={task.domain} 子领域={task.subdomain} 数据源={task.source} "
         f"年份={task.year_from}-{task.year_to} 最低引用={task.min_citations} "
         f"最大论文数={task.max_papers}"
@@ -222,30 +242,6 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
 
     crawler = None
     try:
-        # 确定搜索关键词
-        queries = []
-        if task.subdomain:
-            if task.subdomain in CS_SUBDOMAIN_QUERIES:
-                # 预设子领域 → 使用预定义关键词
-                queries = CS_SUBDOMAIN_QUERIES[task.subdomain]
-            else:
-                # 自定义文本输入 → 直接作为搜索关键词（下划线转空格）
-                queries = [task.subdomain.strip().replace("_", " ")]
-        else:
-            for sub_queries in CS_SUBDOMAIN_QUERIES.values():
-                queries.extend(sub_queries)
-
-        if not queries:
-            logger.error(f"❌ [Task {task_id}] 无可用搜索关键词")
-            task.status = "failed"
-            await db.commit()
-            return
-
-        logger.info(f"📋 [Task {task_id}] 搜索关键词: {queries}")
-
-        # 每个查询多取一些，最终混合排序取 top N
-        # 当 min_citations 高时，符合条件的论文少，不需要多取
-        papers_per_query = max(task.max_papers, 20) if task.min_citations < 1000 else task.max_papers
         all_papers: list[PaperMeta] = []
         seen_ids: set[str] = set()
 
@@ -253,43 +249,23 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
         _active_crawlers[task_id] = crawler
 
         async with crawler:
-            for i, query in enumerate(queries):
-                if crawler.is_cancelled:
-                    logger.info(f"⏹️ [Task {task_id}] 用户取消爬取")
-                    break
-
-                logger.info(
-                    f"🔍 [Task {task_id}] 查询 {i+1}/{len(queries)}: '{query}' "
-                    f"(引用>={task.min_citations}, 限制{papers_per_query}篇)"
+            if mode == "author":
+                all_papers, seen_ids = await _crawl_by_author(
+                    crawler, task, seen_ids
+                )
+            elif mode == "institution":
+                all_papers, seen_ids = await _crawl_by_institution(
+                    crawler, task, seen_ids
+                )
+            elif mode == "elite_preset":
+                all_papers, seen_ids = await _crawl_by_preset(
+                    crawler, task, seen_ids
+                )
+            else:
+                all_papers, seen_ids = await _crawl_by_keyword(
+                    crawler, task, seen_ids
                 )
 
-                try:
-                    papers = await crawler.search_papers(
-                        query=query,
-                        year_from=task.year_from,
-                        year_to=task.year_to,
-                        min_citations=task.min_citations,
-                        limit=papers_per_query,
-                    )
-                except Exception as e:
-                    logger.error(f"❌ [Task {task_id}] 查询失败 '{query}': {e}")
-                    papers = []
-
-                for p in papers:
-                    dedup_key = p.s2_id or p.doi or p.url or p.title
-                    if dedup_key and dedup_key not in seen_ids:
-                        seen_ids.add(dedup_key)
-                        all_papers.append(p)
-
-                logger.info(
-                    f"  📄 查询 '{query}' 返回 {len(papers)} 篇, "
-                    f"去重后累计 {len(all_papers)} 篇"
-                )
-
-                task.searched += len(papers)
-                await db.commit()
-
-            # 输出爬虫统计
             logger.info(f"📊 [Task {task_id}] 网络统计: {crawler.stats.summary()}")
 
         # 按影响力排序，取 top N
@@ -333,7 +309,6 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
                 )
                 task.failed += 1
 
-            # 每 10 篇提交一次，避免大事务
             if (task.imported + task.failed) % 10 == 0:
                 await db.commit()
 
@@ -375,3 +350,230 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
     finally:
         _active_crawlers.pop(task_id, None)
         await db.commit()
+
+
+# ──────────────────────────────────────────────
+# 各模式的爬取逻辑
+# ──────────────────────────────────────────────
+
+async def _crawl_by_keyword(
+    crawler: BaseCrawler, task: CrawlTask, seen_ids: set[str],
+) -> tuple[list[PaperMeta], set[str]]:
+    """keyword 模式：按关键词搜索论文"""
+    queries = []
+    if task.subdomain:
+        if task.subdomain in CS_SUBDOMAIN_QUERIES:
+            queries = CS_SUBDOMAIN_QUERIES[task.subdomain]
+        else:
+            queries = [task.subdomain.strip().replace("_", " ")]
+    else:
+        for sub_queries in CS_SUBDOMAIN_QUERIES.values():
+            queries.extend(sub_queries)
+
+    if not queries:
+        logger.error(f"❌ [Task {task.id}] 无可用搜索关键词")
+        return [], seen_ids
+
+    logger.info(f"📋 [Task {task.id}] keyword模式 关键词: {queries}")
+
+    papers_per_query = max(task.max_papers, 20) if task.min_citations < 1000 else task.max_papers
+    all_papers: list[PaperMeta] = []
+
+    for i, query in enumerate(queries):
+        if crawler.is_cancelled:
+            break
+
+        logger.info(
+            f"🔍 [Task {task.id}] 查询 {i+1}/{len(queries)}: '{query}' "
+            f"(引用>={task.min_citations}, 限制{papers_per_query}篇)"
+        )
+
+        try:
+            papers = await crawler.search_papers(
+                query=query,
+                year_from=task.year_from,
+                year_to=task.year_to,
+                min_citations=task.min_citations,
+                limit=papers_per_query,
+            )
+        except Exception as e:
+            logger.error(f"❌ [Task {task.id}] 查询失败 '{query}': {e}")
+            papers = []
+
+        for p in papers:
+            dedup_key = p.s2_id or p.doi or p.url or p.title
+            if dedup_key and dedup_key not in seen_ids:
+                seen_ids.add(dedup_key)
+                all_papers.append(p)
+
+        logger.info(
+            f"  📄 查询 '{query}' 返回 {len(papers)} 篇, "
+            f"去重后累计 {len(all_papers)} 篇"
+        )
+
+        task.searched += len(papers)
+
+    return all_papers, seen_ids
+
+
+async def _crawl_by_author(
+    crawler: BaseCrawler, task: CrawlTask, seen_ids: set[str],
+) -> tuple[list[PaperMeta], set[str]]:
+    """author 模式：按作者 ID 搜索论文"""
+    author_id = task.author_id
+    if not author_id:
+        logger.error(f"❌ [Task {task.id}] author 模式缺少 author_id")
+        return [], seen_ids
+
+    if not isinstance(crawler, OpenAlexCrawler):
+        logger.error(f"❌ [Task {task.id}] author 模式仅支持 openalex 数据源")
+        return [], seen_ids
+
+    logger.info(f"👤 [Task {task.id}] author模式: {author_id}")
+
+    all_papers: list[PaperMeta] = []
+    try:
+        papers = await crawler.search_by_author(
+            author_id=author_id,
+            year_from=task.year_from,
+            year_to=task.year_to,
+            min_citations=task.min_citations,
+            limit=task.max_papers * 2,  # 多取以保证去重后够数
+        )
+    except Exception as e:
+        logger.error(f"❌ [Task {task.id}] author 搜索失败: {e}")
+        papers = []
+
+    for p in papers:
+        dedup_key = p.s2_id or p.doi or p.url or p.title
+        if dedup_key and dedup_key not in seen_ids:
+            seen_ids.add(dedup_key)
+            all_papers.append(p)
+
+    task.searched += len(papers)
+    logger.info(f"  📄 author '{author_id}' 返回 {len(papers)} 篇, 去重后 {len(all_papers)} 篇")
+    return all_papers, seen_ids
+
+
+async def _crawl_by_institution(
+    crawler: BaseCrawler, task: CrawlTask, seen_ids: set[str],
+) -> tuple[list[PaperMeta], set[str]]:
+    """institution 模式：按机构 ID 搜索论文"""
+    institution_id = task.institution_id
+    if not institution_id:
+        logger.error(f"❌ [Task {task.id}] institution 模式缺少 institution_id")
+        return [], seen_ids
+
+    if not isinstance(crawler, OpenAlexCrawler):
+        logger.error(f"❌ [Task {task.id}] institution 模式仅支持 openalex 数据源")
+        return [], seen_ids
+
+    logger.info(f"🏛️ [Task {task.id}] institution模式: {institution_id}")
+
+    all_papers: list[PaperMeta] = []
+    try:
+        papers = await crawler.search_by_institution(
+            institution_id=institution_id,
+            year_from=task.year_from,
+            year_to=task.year_to,
+            min_citations=task.min_citations,
+            limit=task.max_papers * 2,
+        )
+    except Exception as e:
+        logger.error(f"❌ [Task {task.id}] institution 搜索失败: {e}")
+        papers = []
+
+    for p in papers:
+        dedup_key = p.s2_id or p.doi or p.url or p.title
+        if dedup_key and dedup_key not in seen_ids:
+            seen_ids.add(dedup_key)
+            all_papers.append(p)
+
+    task.searched += len(papers)
+    logger.info(
+        f"  📄 institution '{institution_id}' 返回 {len(papers)} 篇, "
+        f"去重后 {len(all_papers)} 篇"
+    )
+    return all_papers, seen_ids
+
+
+async def _crawl_by_preset(
+    crawler: BaseCrawler, task: CrawlTask, seen_ids: set[str],
+) -> tuple[list[PaperMeta], set[str]]:
+    """elite_preset 模式：使用预设配置批量爬取"""
+    preset_name = task.preset_name
+    if not preset_name:
+        logger.error(f"❌ [Task {task.id}] elite_preset 模式缺少 preset_name")
+        return [], seen_ids
+
+    if not isinstance(crawler, OpenAlexCrawler):
+        logger.error(f"❌ [Task {task.id}] elite_preset 模式仅支持 openalex 数据源")
+        return [], seen_ids
+
+    profiles = _load_elite_profiles()
+    presets = profiles.get("presets", {})
+    preset = presets.get(preset_name)
+    if not preset:
+        logger.error(
+            f"❌ [Task {task.id}] 预设 '{preset_name}' 不存在, "
+            f"可选: {list(presets.keys())}"
+        )
+        return [], seen_ids
+
+    logger.info(f"⭐ [Task {task.id}] elite_preset模式: {preset_name} — {preset.get('description', '')}")
+
+    min_cit = preset.get("min_citations", task.min_citations)
+    year_from = preset.get("year_from", task.year_from)
+    all_papers: list[PaperMeta] = []
+
+    # 按研究者搜索
+    for author_id in preset.get("researchers", []):
+        if crawler.is_cancelled:
+            break
+        logger.info(f"  👤 搜索研究者: {author_id}")
+        try:
+            papers = await crawler.search_by_author(
+                author_id=author_id,
+                year_from=year_from,
+                year_to=task.year_to,
+                min_citations=min_cit,
+                limit=50,
+            )
+            for p in papers:
+                dedup_key = p.s2_id or p.doi or p.url or p.title
+                if dedup_key and dedup_key not in seen_ids:
+                    seen_ids.add(dedup_key)
+                    all_papers.append(p)
+            task.searched += len(papers)
+            logger.info(f"    📄 {author_id}: {len(papers)} 篇")
+        except Exception as e:
+            logger.error(f"    ❌ {author_id} 失败: {e}")
+
+    # 按机构搜索
+    for inst_id in preset.get("institutions", []):
+        if crawler.is_cancelled:
+            break
+        logger.info(f"  🏛️ 搜索机构: {inst_id}")
+        try:
+            papers = await crawler.search_by_institution(
+                institution_id=inst_id,
+                year_from=year_from,
+                year_to=task.year_to,
+                min_citations=min_cit,
+                limit=50,
+            )
+            for p in papers:
+                dedup_key = p.s2_id or p.doi or p.url or p.title
+                if dedup_key and dedup_key not in seen_ids:
+                    seen_ids.add(dedup_key)
+                    all_papers.append(p)
+            task.searched += len(papers)
+            logger.info(f"    📄 {inst_id}: {len(papers)} 篇")
+        except Exception as e:
+            logger.error(f"    ❌ {inst_id} 失败: {e}")
+
+    logger.info(
+        f"  ⭐ 预设 '{preset_name}' 共搜索 {task.searched} 篇, "
+        f"去重后 {len(all_papers)} 篇"
+    )
+    return all_papers, seen_ids
