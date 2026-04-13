@@ -11,7 +11,6 @@ from app.schemas.schemas import CrawlRequest, CrawlTaskResponse
 from app.services.crawlers.orchestrator import (
     run_crawl_task,
     cancel_crawl_task,
-    get_elite_presets,
 )
 from app.services.crawlers.openalex_crawler import OpenAlexCrawler
 
@@ -127,17 +126,29 @@ async def list_crawl_tasks(db: AsyncSession = Depends(get_db)):
 @router.get("/elite/presets")
 async def list_elite_presets():
     """列出所有可用的 Elite 预设配置"""
-    presets = get_elite_presets()
-    return {
-        name: {
+    from app.services.crawlers.orchestrator import _load_elite_profiles
+
+    profiles = _load_elite_profiles()
+    presets = profiles.get("presets", {})
+
+    # Build ID→name lookup maps
+    inst_map = {inst["id"]: inst["name"] for inst in profiles.get("institutions", [])}
+    researcher_map = {r["id"]: r["name"] for r in profiles.get("researchers", [])}
+
+    result = {}
+    for name, preset in presets.items():
+        researcher_ids = preset.get("researchers", [])
+        institution_ids = preset.get("institutions", [])
+        result[name] = {
             "description": preset.get("description", ""),
-            "researchers": len(preset.get("researchers", [])),
-            "institutions": len(preset.get("institutions", [])),
+            "researchers": len(researcher_ids),
+            "institutions": len(institution_ids),
+            "researcher_names": [researcher_map.get(rid, rid) for rid in researcher_ids],
+            "institution_names": [inst_map.get(iid, iid) for iid in institution_ids],
             "min_citations": preset.get("min_citations", 0),
             "year_from": preset.get("year_from", 2016),
         }
-        for name, preset in presets.items()
-    }
+    return result
 
 
 @router.get("/elite/authors/search")

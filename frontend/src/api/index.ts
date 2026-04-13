@@ -100,6 +100,8 @@ export interface ElitePreset {
   description: string;
   researchers: number;
   institutions: number;
+  researcher_names: string[];
+  institution_names: string[];
   min_citations: number;
   year_from: number;
 }

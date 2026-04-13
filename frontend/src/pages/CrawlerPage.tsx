@@ -352,18 +352,33 @@ function EliteForm({
               }))}
             />
             {presetName && presets[presetName] && (
-              <Descriptions size="small" column={4} bordered>
-                <Descriptions.Item label="说明">
+              <Descriptions size="small" column={2} bordered>
+                <Descriptions.Item label="说明" span={2}>
                   {presets[presetName].description}
                 </Descriptions.Item>
-                <Descriptions.Item label="学者数">
-                  {presets[presetName].researchers}
-                </Descriptions.Item>
-                <Descriptions.Item label="机构数">
-                  {presets[presetName].institutions}
-                </Descriptions.Item>
+                {presets[presetName].institution_names.length > 0 && (
+                  <Descriptions.Item label="机构" span={2}>
+                    {presets[presetName].institution_names.map((name) => (
+                      <Tag key={name} color="blue">
+                        {name}
+                      </Tag>
+                    ))}
+                  </Descriptions.Item>
+                )}
+                {presets[presetName].researcher_names.length > 0 && (
+                  <Descriptions.Item label="学者" span={2}>
+                    {presets[presetName].researcher_names.map((name) => (
+                      <Tag key={name} color="green">
+                        {name}
+                      </Tag>
+                    ))}
+                  </Descriptions.Item>
+                )}
                 <Descriptions.Item label="最低引用">
                   {presets[presetName].min_citations}
+                </Descriptions.Item>
+                <Descriptions.Item label="起始年份">
+                  {presets[presetName].year_from}
                 </Descriptions.Item>
               </Descriptions>
             )}

@@ -115,6 +115,10 @@ class TestElitePresets:
         data = resp.json()
         assert "top_ai_labs" in data
         assert "description" in data["top_ai_labs"]
+        # Verify new name fields are present
+        assert "institution_names" in data["top_ai_labs"]
+        assert "researcher_names" in data["top_ai_labs"]
+        assert len(data["top_ai_labs"]["institution_names"]) > 0
 
     @patch("app.api.crawler.OpenAlexCrawler")
     async def test_search_authors(self, mock_cls, test_client):
