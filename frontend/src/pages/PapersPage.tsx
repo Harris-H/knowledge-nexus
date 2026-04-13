@@ -140,6 +140,14 @@ export default function PapersPage() {
       ellipsis: true,
     },
     {
+      title: "入库时间",
+      dataIndex: "created_at",
+      width: 100,
+      sorter: (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      render: (v: string) => (v ? new Date(v).toLocaleDateString("zh-CN") : "-"),
+    },
+    {
       title: "操作",
       width: 140,
       render: (_: unknown, record: Paper) => (
