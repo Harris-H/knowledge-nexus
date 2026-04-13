@@ -106,9 +106,7 @@ class CrawlRequest(BaseModel):
     auto_download_pdf: bool = False
     # Elite Profile 扩展字段
     author_id: str | None = None  # mode=author 时使用，OpenAlex author ID
-    institution_id: str | None = (
-        None  # mode=institution 时使用，OpenAlex institution ID
-    )
+    institution_id: str | None = None  # mode=institution 时使用，OpenAlex institution ID
     preset_name: str | None = None  # mode=elite_preset 时使用，预设配置名称
 
 
@@ -161,7 +159,9 @@ class SearchResponse(BaseModel):
 
 class KnowledgeNodeCreate(BaseModel):
     name: str
-    node_type: str  # phenomenon / theorem / law / method / concept / principle / process / structure
+    node_type: (
+        str  # phenomenon / theorem / law / method / concept / principle / process / structure
+    )
     domain: str  # biology / physics / mathematics / computer_science / chemistry / ...
     description: str | None = None
     summary: str | None = None

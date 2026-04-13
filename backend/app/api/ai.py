@@ -116,9 +116,7 @@ async def api_save_discoveries(
     if not req.discoveries:
         return {"saved": 0}
     try:
-        saved = await save_discovered_relations(
-            db, req.discoveries, auto_confirm=req.auto_confirm
-        )
+        saved = await save_discovered_relations(db, req.discoveries, auto_confirm=req.auto_confirm)
         return {"saved": saved}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"保存失败: {str(e)}")

@@ -139,14 +139,10 @@ async def import_paper_meta(db: AsyncSession, meta: PaperMeta) -> Paper | None:
         ("url", meta.url),
     ]:
         if value:
-            result = await db.execute(
-                select(Paper).where(getattr(Paper, field_name) == value)
-            )
+            result = await db.execute(select(Paper).where(getattr(Paper, field_name) == value))
             existing = result.scalar_one_or_none()
             if existing:
-                logger.debug(
-                    f"Paper already exists: {meta.title[:50]} ({field_name}={value})"
-                )
+                logger.debug(f"Paper already exists: {meta.title[:50]} ({field_name}={value})")
                 return None
 
     paper = Paper(
@@ -162,9 +158,7 @@ async def import_paper_meta(db: AsyncSession, meta: PaperMeta) -> Paper | None:
         citation_count=meta.citation_count,
         influential_citation_count=meta.influential_citation_count,
         impact_score=compute_impact_score(meta),
-        fields_of_study=", ".join(meta.fields_of_study[:5])
-        if meta.fields_of_study
-        else None,
+        fields_of_study=", ".join(meta.fields_of_study[:5]) if meta.fields_of_study else None,
     )
 
     # 处理作者（限制数量，防御异常数据）
@@ -183,9 +177,7 @@ async def import_paper_meta(db: AsyncSession, meta: PaperMeta) -> Paper | None:
     return paper
 
 
-async def build_citation_relations(
-    db: AsyncSession, paper: Paper, references: list[str]
-):
+async def build_citation_relations(db: AsyncSession, paper: Paper, references: list[str]):
     """根据参考文献 ID 创建引用关系"""
     created = 0
     for ref_s2_id in references:
@@ -264,9 +256,7 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
             if mode == "author":
                 all_papers, seen_ids = await _crawl_by_author(crawler, task, seen_ids)
             elif mode == "institution":
-                all_papers, seen_ids = await _crawl_by_institution(
-                    crawler, task, seen_ids
-                )
+                all_papers, seen_ids = await _crawl_by_institution(crawler, task, seen_ids)
             elif mode == "elite_preset":
                 all_papers, seen_ids = await _crawl_by_preset(crawler, task, seen_ids)
             else:
@@ -309,9 +299,7 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
                     skipped += 1
                     logger.debug(f"  ⏭️ 跳过(已存在): {meta.title[:60]}")
             except Exception as e:
-                logger.error(
-                    f"  ❌ 导入失败 '{meta.title[:50]}': {e}\n{traceback.format_exc()}"
-                )
+                logger.error(f"  ❌ 导入失败 '{meta.title[:50]}': {e}\n{traceback.format_exc()}")
                 task.failed += 1
 
             if (task.imported + task.failed) % 10 == 0:
@@ -384,9 +372,7 @@ async def _crawl_by_keyword(
 
     logger.info(f"📋 [Task {task.id}] keyword模式 关键词: {queries}")
 
-    papers_per_query = (
-        max(task.max_papers, 20) if task.min_citations < 1000 else task.max_papers
-    )
+    papers_per_query = max(task.max_papers, 20) if task.min_citations < 1000 else task.max_papers
     all_papers: list[PaperMeta] = []
 
     for i, query in enumerate(queries):
@@ -416,10 +402,7 @@ async def _crawl_by_keyword(
                 seen_ids.add(dedup_key)
                 all_papers.append(p)
 
-        logger.info(
-            f"  📄 查询 '{query}' 返回 {len(papers)} 篇, "
-            f"去重后累计 {len(all_papers)} 篇"
-        )
+        logger.info(f"  📄 查询 '{query}' 返回 {len(papers)} 篇, 去重后累计 {len(all_papers)} 篇")
 
         task.searched += len(papers)
 
@@ -463,9 +446,7 @@ async def _crawl_by_author(
             all_papers.append(p)
 
     task.searched += len(papers)
-    logger.info(
-        f"  📄 author '{author_id}' 返回 {len(papers)} 篇, 去重后 {len(all_papers)} 篇"
-    )
+    logger.info(f"  📄 author '{author_id}' 返回 {len(papers)} 篇, 去重后 {len(all_papers)} 篇")
     return all_papers, seen_ids
 
 
@@ -507,8 +488,7 @@ async def _crawl_by_institution(
 
     task.searched += len(papers)
     logger.info(
-        f"  📄 institution '{institution_id}' 返回 {len(papers)} 篇, "
-        f"去重后 {len(all_papers)} 篇"
+        f"  📄 institution '{institution_id}' 返回 {len(papers)} 篇, 去重后 {len(all_papers)} 篇"
     )
     return all_papers, seen_ids
 
@@ -533,8 +513,7 @@ async def _crawl_by_preset(
     preset = presets.get(preset_name)
     if not preset:
         logger.error(
-            f"❌ [Task {task.id}] 预设 '{preset_name}' 不存在, "
-            f"可选: {list(presets.keys())}"
+            f"❌ [Task {task.id}] 预设 '{preset_name}' 不存在, 可选: {list(presets.keys())}"
         )
         return [], seen_ids
 
@@ -592,8 +571,5 @@ async def _crawl_by_preset(
         except Exception as e:
             logger.error(f"    ❌ {inst_id} 失败: {e}")
 
-    logger.info(
-        f"  ⭐ 预设 '{preset_name}' 共搜索 {task.searched} 篇, "
-        f"去重后 {len(all_papers)} 篇"
-    )
+    logger.info(f"  ⭐ 预设 '{preset_name}' 共搜索 {task.searched} 篇, 去重后 {len(all_papers)} 篇")
     return all_papers, seen_ids

@@ -236,9 +236,7 @@ class BaseCrawler(ABC):
                 # === 4xx 客户端错误（非429）— 不可恢复 ===
                 if resp.status_code >= 400:
                     self.stats.requests_failed += 1
-                    logger.warning(
-                        f"Client error {resp.status_code}: {url.split('?')[0]}"
-                    )
+                    logger.warning(f"Client error {resp.status_code}: {url.split('?')[0]}")
                     return None
 
                 # === 成功 ===
@@ -269,18 +267,14 @@ class BaseCrawler(ABC):
                 last_error = e
                 self.stats.requests_failed += 1
                 wait = (2**error_attempts) + random.uniform(0, 2)
-                logger.warning(
-                    f"Request error (attempt {error_attempts}/{self.max_retries}): {e}"
-                )
+                logger.warning(f"Request error (attempt {error_attempts}/{self.max_retries}): {e}")
                 await asyncio.sleep(wait)
 
             except Exception as e:
                 error_attempts += 1
                 last_error = e
                 self.stats.requests_failed += 1
-                logger.error(
-                    f"Unexpected error (attempt {error_attempts}/{self.max_retries}): {e}"
-                )
+                logger.error(f"Unexpected error (attempt {error_attempts}/{self.max_retries}): {e}")
                 await asyncio.sleep(2**error_attempts)
 
         logger.error(

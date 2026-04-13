@@ -137,9 +137,7 @@ async def _ensure_domain_exists(db: AsyncSession, domain_name: str) -> Domain:
 
 async def _get_domain_nodes(db: AsyncSession, domain_name: str) -> list[KnowledgeNode]:
     """获取领域内的所有知识节点"""
-    result = await db.execute(
-        select(KnowledgeNode).where(KnowledgeNode.domain == domain_name)
-    )
+    result = await db.execute(select(KnowledgeNode).where(KnowledgeNode.domain == domain_name))
     return list(result.scalars().all())
 
 
@@ -201,9 +199,7 @@ async def generate_domain_digest(db: AsyncSession, domain_name: str) -> Domain:
     for r in relations:
         desc = (r.description or "")[:80]
         relations_text_lines.append(f"- [{r.relation_type}] {desc}")
-    relations_text = (
-        "\n".join(relations_text_lines) if relations_text_lines else "（暂无关联）"
-    )
+    relations_text = "\n".join(relations_text_lines) if relations_text_lines else "（暂无关联）"
 
     # 调用 LLM 生成摘要
     prompt = GENERATE_DIGEST_PROMPT.format(

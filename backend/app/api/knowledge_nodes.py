@@ -79,9 +79,7 @@ async def delete_knowledge_node(node_id: str, db: AsyncSession = Depends(get_db)
     domain_name = node.domain
     # 删除关联的关系
     await db.execute(
-        delete(Relation).where(
-            (Relation.source_id == node_id) | (Relation.target_id == node_id)
-        )
+        delete(Relation).where((Relation.source_id == node_id) | (Relation.target_id == node_id))
     )
     await db.delete(node)
     await db.flush()
@@ -113,9 +111,7 @@ async def batch_delete_knowledge_nodes(
 
     # 删除关联关系
     await db.execute(
-        delete(Relation).where(
-            Relation.source_id.in_(req.ids) | Relation.target_id.in_(req.ids)
-        )
+        delete(Relation).where(Relation.source_id.in_(req.ids) | Relation.target_id.in_(req.ids))
     )
     # 删除节点
     await db.execute(delete(KnowledgeNode).where(KnowledgeNode.id.in_(req.ids)))

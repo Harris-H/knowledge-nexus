@@ -39,9 +39,7 @@ class OpenAlexCrawler(BaseCrawler):
     """
 
     def __init__(self, email: str = "", rate_limit: float = 1.0):
-        super().__init__(
-            rate_limit=rate_limit, rate_jitter=0.3, use_browser_headers=False
-        )
+        super().__init__(rate_limit=rate_limit, rate_jitter=0.3, use_browser_headers=False)
         self.email = email  # 用于 polite pool
 
     async def search_papers(
@@ -103,9 +101,7 @@ class OpenAlexCrawler(BaseCrawler):
             total = data.get("meta", {}).get("count", 0)
             page += 1
 
-            logger.info(
-                f"[OpenAlex] '{query}': fetched {len(papers)}/{min(total, limit)} papers"
-            )
+            logger.info(f"[OpenAlex] '{query}': fetched {len(papers)}/{min(total, limit)} papers")
 
             if len(results) < per_page or len(papers) >= limit:
                 break
@@ -350,9 +346,7 @@ class OpenAlexCrawler(BaseCrawler):
         if self.email:
             params["mailto"] = self.email
 
-        logger.info(
-            f"[OpenAlex] Discover authors: institution={institution_id}, h>{min_h_index}"
-        )
+        logger.info(f"[OpenAlex] Discover authors: institution={institution_id}, h>{min_h_index}")
         data = await self.fetch(f"{OPENALEX_API_BASE}/authors", params=params)
         if not data or "results" not in data:
             return []
@@ -393,9 +387,7 @@ class OpenAlexCrawler(BaseCrawler):
         for a in data["results"]:
             stats = a.get("summary_stats") or {}
             institutions = a.get("last_known_institutions") or []
-            affiliation = (
-                institutions[0].get("display_name", "") if institutions else ""
-            )
+            affiliation = institutions[0].get("display_name", "") if institutions else ""
             results.append(
                 {
                     "id": a.get("id", "").replace("https://openalex.org/", ""),

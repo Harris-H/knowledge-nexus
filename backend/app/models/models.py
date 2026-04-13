@@ -47,9 +47,7 @@ class Paper(Base):
     impact_score: Mapped[float] = mapped_column(Float, default=0.0)
     key_contributions: Mapped[str | None] = mapped_column(Text)  # 短名称
     summary: Mapped[str | None] = mapped_column(String(500))  # 一句话简介
-    fields_of_study: Mapped[str | None] = mapped_column(
-        String(500)
-    )  # 所属领域（逗号分隔）
+    fields_of_study: Mapped[str | None] = mapped_column(String(500))  # 所属领域（逗号分隔）
     ai_status: Mapped[str] = mapped_column(String(20), default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
@@ -58,9 +56,7 @@ class Paper(Base):
 
     # 关系
     domain: Mapped["Domain | None"] = relationship(back_populates="papers")
-    authors: Mapped[list["Author"]] = relationship(
-        secondary=paper_authors, back_populates="papers"
-    )
+    authors: Mapped[list["Author"]] = relationship(secondary=paper_authors, back_populates="papers")
 
     def __repr__(self):
         return f"<Paper {self.id}: {self.title[:50]}>"
@@ -74,9 +70,7 @@ class Author(Base):
     affiliation: Mapped[str | None] = mapped_column(String(300))
     s2_id: Mapped[str | None] = mapped_column(String(50), unique=True)
 
-    papers: Mapped[list["Paper"]] = relationship(
-        secondary=paper_authors, back_populates="authors"
-    )
+    papers: Mapped[list["Paper"]] = relationship(secondary=paper_authors, back_populates="authors")
 
 
 class Domain(Base):
@@ -98,9 +92,7 @@ class Domain(Base):
 
     papers: Mapped[list["Paper"]] = relationship(back_populates="domain")
     children: Mapped[list["Domain"]] = relationship(back_populates="parent")
-    parent: Mapped["Domain | None"] = relationship(
-        back_populates="children", remote_side=[id]
-    )
+    parent: Mapped["Domain | None"] = relationship(back_populates="children", remote_side=[id])
 
 
 class Concept(Base):
@@ -152,9 +144,7 @@ class Relation(Base):
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=gen_id)
     source_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
-    source_type: Mapped[str] = mapped_column(
-        String(20), nullable=False
-    )  # paper / concept
+    source_type: Mapped[str] = mapped_column(String(20), nullable=False)  # paper / concept
     target_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     target_type: Mapped[str] = mapped_column(String(20), nullable=False)
     relation_type: Mapped[str] = mapped_column(

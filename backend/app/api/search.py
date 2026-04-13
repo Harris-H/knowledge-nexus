@@ -20,9 +20,7 @@ async def search_papers(
     db: AsyncSession = Depends(get_db),
 ):
     """搜索论文 — 当前实现为关键词搜索，后续扩展语义搜索"""
-    query = select(Paper).where(
-        Paper.title.ilike(f"%{q}%") | Paper.abstract.ilike(f"%{q}%")
-    )
+    query = select(Paper).where(Paper.title.ilike(f"%{q}%") | Paper.abstract.ilike(f"%{q}%"))
 
     if domain:
         query = query.where(Paper.domain_id == domain)
@@ -37,11 +35,7 @@ async def search_papers(
 
     results = []
     for p in papers:
-        snippet = (
-            p.abstract[:200] + "..."
-            if p.abstract and len(p.abstract) > 200
-            else p.abstract
-        )
+        snippet = p.abstract[:200] + "..." if p.abstract and len(p.abstract) > 200 else p.abstract
         results.append(
             SearchResult(
                 id=p.id,

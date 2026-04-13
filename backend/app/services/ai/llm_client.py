@@ -39,9 +39,7 @@ async def chat_completion(
     if max_tokens:
         body["max_tokens"] = max_tokens
 
-    logger.info(
-        f"🤖 LLM 请求: model={model}, messages={len(messages)}, temp={temperature}"
-    )
+    logger.info(f"🤖 LLM 请求: model={model}, messages={len(messages)}, temp={temperature}")
 
     async with httpx.AsyncClient(timeout=120) as client:
         resp = await client.post(

@@ -25,9 +25,7 @@ class SemanticScholarCrawler(BaseCrawler):
 
     def __init__(self, api_key: str = "", rate_limit: float = 1.0):
         # S2 API 是合法接口调用，使用 API 专用头即可
-        super().__init__(
-            rate_limit=rate_limit, rate_jitter=0.3, use_browser_headers=False
-        )
+        super().__init__(rate_limit=rate_limit, rate_jitter=0.3, use_browser_headers=False)
         self.api_key = api_key
 
     async def __aenter__(self):
@@ -61,9 +59,7 @@ class SemanticScholarCrawler(BaseCrawler):
 
             # S2 API offset 上限保护
             if offset >= S2_MAX_OFFSET:
-                logger.warning(
-                    f"Reached S2 API offset limit ({S2_MAX_OFFSET}) for '{query}'"
-                )
+                logger.warning(f"Reached S2 API offset limit ({S2_MAX_OFFSET}) for '{query}'")
                 break
 
             actual_limit = min(batch_size, S2_MAX_OFFSET - offset)
@@ -83,9 +79,7 @@ class SemanticScholarCrawler(BaseCrawler):
             if not data:
                 consecutive_empty += 1
                 if consecutive_empty >= 3:
-                    logger.warning(
-                        f"3 consecutive empty responses, stopping search for '{query}'"
-                    )
+                    logger.warning(f"3 consecutive empty responses, stopping search for '{query}'")
                     break
                 continue
 
@@ -261,9 +255,7 @@ class SemanticScholarCrawler(BaseCrawler):
             url=data.get("url"),
             pdf_url=pdf_info.get("url"),
             citation_count=safe_int(data.get("citationCount"), 0),
-            influential_citation_count=safe_int(
-                data.get("influentialCitationCount"), 0
-            ),
+            influential_citation_count=safe_int(data.get("influentialCitationCount"), 0),
             references=refs,
             fields_of_study=fields,
         )

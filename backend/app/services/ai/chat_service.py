@@ -160,9 +160,7 @@ async def _find_node_by_name(db: AsyncSession, name: str) -> dict | None:
         return {"id": kn.id, "name": kn.name, "type": "knowledge_node"}
 
     # 模糊匹配知识节点
-    result = await db.execute(
-        select(KnowledgeNode).where(KnowledgeNode.name.ilike(f"%{name}%"))
-    )
+    result = await db.execute(select(KnowledgeNode).where(KnowledgeNode.name.ilike(f"%{name}%")))
     kn = result.scalars().first()
     if kn:
         return {"id": kn.id, "name": kn.name, "type": "knowledge_node"}
@@ -443,9 +441,7 @@ async def _generate_summary(
             },
             *[{"role": m["role"], "content": m["content"]} for m in messages[-6:]],
         ]
-        return await chat_completion(
-            messages=chat_msgs, temperature=0.7, max_tokens=800
-        )
+        return await chat_completion(messages=chat_msgs, temperature=0.7, max_tokens=800)
 
     if result is None:
         return f"{reply_prefix}\n\n未获得有效结果。"
@@ -457,24 +453,18 @@ async def _generate_summary(
     if data_type == "search_results":
         items = data.get("items", [])
         if not items:
-            return (
-                f"{reply_prefix}\n\n未找到与「{params.get('query', '')}」相关的知识。"
-            )
+            return f"{reply_prefix}\n\n未找到与「{params.get('query', '')}」相关的知识。"
         summary_lines = [f"{reply_prefix}\n\n找到 **{len(items)}** 条相关结果：\n"]
         for item in items[:8]:
             icon = "📄" if item.get("type") == "paper" else "💡"
-            summary_lines.append(
-                f"- {icon} **{item['name']}** — {item.get('summary', '')[:80]}"
-            )
+            summary_lines.append(f"- {icon} **{item['name']}** — {item.get('summary', '')[:80]}")
         return "\n".join(summary_lines)
 
     elif data_type == "discoveries":
         discoveries = data.get("discoveries", [])
         if not discoveries:
             return f"{reply_prefix}\n\n知识网络已经很完善，AI 未发现新的关联。"
-        summary_lines = [
-            f"{reply_prefix}\n\n发现了 **{len(discoveries)}** 条跨域关联：\n"
-        ]
+        summary_lines = [f"{reply_prefix}\n\n发现了 **{len(discoveries)}** 条跨域关联：\n"]
         for d in discoveries:
             summary_lines.append(
                 f"- **{d['source_name']}** → **{d['target_name']}** "
@@ -502,9 +492,7 @@ async def _generate_summary(
         lines = [f"{reply_prefix}\n"]
         pattern = data.get("abstract_pattern")
         if pattern:
-            lines.append(
-                f"### 🔮 深层模式: {pattern['name']}\n{pattern['description']}\n"
-            )
+            lines.append(f"### 🔮 深层模式: {pattern['name']}\n{pattern['description']}\n")
         transfers = data.get("transfer_ideas", [])
         if transfers:
             lines.append("### 🔄 知识迁移方向\n")
@@ -532,12 +520,8 @@ async def _generate_summary(
         )
 
     elif data_type == "cross_domain_analysis":
-        domain_a_label = DOMAIN_LABELS.get(
-            data.get("domain_a", ""), data.get("domain_a", "")
-        )
-        domain_b_label = DOMAIN_LABELS.get(
-            data.get("domain_b", ""), data.get("domain_b", "")
-        )
+        domain_a_label = DOMAIN_LABELS.get(data.get("domain_a", ""), data.get("domain_a", ""))
+        domain_b_label = DOMAIN_LABELS.get(data.get("domain_b", ""), data.get("domain_b", ""))
         summary = data.get("summary", "")
         lines = [
             f"{reply_prefix}\n\n"
@@ -570,9 +554,7 @@ async def _generate_summary(
                 f"{d['node_count']} 节点, {d['paper_count']} 论文"
                 f"{' (摘要已过期)' if d['is_stale'] else ''}"
             )
-        lines.append(
-            "\n💡 你可以说「生成XX领域摘要」或「分析XX和YY的跨域关联」来深入了解。"
-        )
+        lines.append("\n💡 你可以说「生成XX领域摘要」或「分析XX和YY的跨域关联」来深入了解。")
         return "\n".join(lines)
 
     return f"{reply_prefix}\n\n操作完成。"

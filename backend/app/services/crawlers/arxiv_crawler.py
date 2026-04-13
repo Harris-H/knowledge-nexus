@@ -29,9 +29,7 @@ class ArxivCrawler(BaseCrawler):
     """
 
     def __init__(self, rate_limit: float = 3.0, enable_citation_check: bool = True):
-        super().__init__(
-            rate_limit=rate_limit, rate_jitter=0.5, use_browser_headers=False
-        )
+        super().__init__(rate_limit=rate_limit, rate_jitter=0.5, use_browser_headers=False)
         self.enable_citation_check = enable_citation_check
 
     async def search_papers(
@@ -110,9 +108,7 @@ class ArxivCrawler(BaseCrawler):
                 if len(entries) < batch_size:
                     break
 
-                logger.info(
-                    f"[arXiv] '{query}': fetched {len(papers)} papers (offset: {start})"
-                )
+                logger.info(f"[arXiv] '{query}': fetched {len(papers)} papers (offset: {start})")
 
             except Exception as e:
                 self.stats.requests_failed += 1
@@ -162,16 +158,14 @@ class ArxivCrawler(BaseCrawler):
                     if results:
                         oa_work = results[0]
                         paper.citation_count = oa_work.get("cited_by_count", 0)
-                        paper.references = [
-                            r for r in (oa_work.get("referenced_works") or [])
-                        ][:200]
+                        paper.references = [r for r in (oa_work.get("referenced_works") or [])][
+                            :200
+                        ]
                 else:
                     self.stats.requests_failed += 1
 
             except Exception as e:
-                logger.debug(
-                    f"OpenAlex enrichment failed for '{paper.title[:50]}': {e}"
-                )
+                logger.debug(f"OpenAlex enrichment failed for '{paper.title[:50]}': {e}")
 
             enriched.append(paper)
 

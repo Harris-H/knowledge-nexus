@@ -102,9 +102,7 @@ async def get_paper(paper_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.put("/{paper_id}", response_model=PaperResponse)
-async def update_paper(
-    paper_id: str, data: PaperUpdate, db: AsyncSession = Depends(get_db)
-):
+async def update_paper(paper_id: str, data: PaperUpdate, db: AsyncSession = Depends(get_db)):
     """更新论文信息"""
     result = await db.execute(select(Paper).where(Paper.id == paper_id))
     paper = result.scalar_one_or_none()
@@ -154,9 +152,7 @@ class BatchDeleteRequest(PydanticBaseModel):
 
 
 @router.post("/batch-delete", status_code=200)
-async def batch_delete_papers(
-    data: BatchDeleteRequest, db: AsyncSession = Depends(get_db)
-):
+async def batch_delete_papers(data: BatchDeleteRequest, db: AsyncSession = Depends(get_db)):
     """批量删除论文及其关联关系"""
     if not data.ids:
         return {"deleted": 0}

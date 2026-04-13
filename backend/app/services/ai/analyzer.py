@@ -135,9 +135,7 @@ ANALYZE_PAIR_PROMPT = """你是一个跨领域知识关联分析师。请深入�
 # ══════════════════════════════════════════════════════════════
 
 
-def _node_to_text(
-    name: str, node_type: str, domain: str, summary: str, description: str
-) -> str:
+def _node_to_text(name: str, node_type: str, domain: str, summary: str, description: str) -> str:
     """将知识节点格式化为文本，名称和描述用 | 分隔以便LLM区分"""
     desc = summary or description[:100]
     return f"- 「{name}」 [{node_type}|{domain}] {desc}"
@@ -186,9 +184,7 @@ async def discover_relations(
     kn_nodes = kn_result.scalars().all()
 
     # 加载所有论文
-    paper_result = await db.execute(
-        select(Paper).order_by(Paper.citation_count.desc()).limit(30)
-    )
+    paper_result = await db.execute(select(Paper).order_by(Paper.citation_count.desc()).limit(30))
     papers = paper_result.scalars().all()
 
     # 构建节点文本
