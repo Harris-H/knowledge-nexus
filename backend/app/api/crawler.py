@@ -3,7 +3,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, text
 
 from app.core.database import get_db, async_session
 from app.models.models import CrawlTask, gen_id
@@ -16,6 +16,15 @@ from app.services.crawlers.openalex_crawler import OpenAlexCrawler
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+# crawl_tasks 表可能缺少的列（模型新增字段时需同步更新此列表）
+_CRAWL_TASKS_EXPECTED_COLUMNS: dict[str, str] = {
+    "mode": "VARCHAR(50) DEFAULT 'keyword'",
+    "author_id": "VARCHAR(100)",
+    "institution_id": "VARCHAR(100)",
+    "preset_name": "VARCHAR(100)",
+}
 
 
 async def _run_crawl_background(task_id: str):
@@ -35,6 +44,18 @@ async def _run_crawl_background(task_id: str):
                 pass
 
 
+async def _ensure_crawl_tasks_schema():
+    """检查 crawl_tasks 表是否缺少新增列，自动 ALTER TABLE 补齐"""
+    async with async_session() as db:
+        result = await db.execute(text("PRAGMA table_info(crawl_tasks)"))
+        existing_cols = {row[1] for row in result.fetchall()}
+        for col, typedef in _CRAWL_TASKS_EXPECTED_COLUMNS.items():
+            if col not in existing_cols:
+                await db.execute(text(f"ALTER TABLE crawl_tasks ADD COLUMN {col} {typedef}"))
+                logger.warning(f"Auto-migrated: added column '{col}' to crawl_tasks")
+        await db.commit()
+
+
 async def _cleanup_zombie_tasks():
     """清理上次服务器关闭后遗留的 running/queued 僵尸任务"""
     async with async_session() as db:
@@ -50,6 +71,7 @@ async def _cleanup_zombie_tasks():
 
 @router.on_event("startup")
 async def on_startup():
+    await _ensure_crawl_tasks_schema()
     await _cleanup_zombie_tasks()
 
 
@@ -72,9 +94,19 @@ async def start_crawl(data: CrawlRequest, db: AsyncSession = Depends(get_db)):
         status="queued",
     )
     db.add(task)
-    # 必须 commit 而非 flush，确保后台任务能读到此记录
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception as e:
+        logger.error(f"Failed to create crawl task: {e}", exc_info=True)
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"创建任务失败: {e}")
     await db.refresh(task)
+
+    logger.info(
+        f"📝 Created crawl task {task.id} | mode={data.mode} "
+        f"preset={data.preset_name} author={data.author_id} "
+        f"institution={data.institution_id}"
+    )
 
     asyncio.create_task(_run_crawl_background(task.id))
 
