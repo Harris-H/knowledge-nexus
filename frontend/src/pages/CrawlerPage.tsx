@@ -374,12 +374,7 @@ function EliteForm({
                     ))}
                   </Descriptions.Item>
                 )}
-                <Descriptions.Item label="最低引用">
-                  {presets[presetName].min_citations}
-                </Descriptions.Item>
-                <Descriptions.Item label="起始年份">
-                  {presets[presetName].year_from}
-                </Descriptions.Item>
+
               </Descriptions>
             )}
           </Space>
