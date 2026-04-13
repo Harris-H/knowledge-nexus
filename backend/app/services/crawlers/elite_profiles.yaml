@@ -4,6 +4,7 @@
 # OpenAlex ID 格式:
 #   机构: I + 数字 (e.g. I97018004)
 #   作者: A + 数字 (e.g. A5100450462)
+# 所有 ID 已于 2025-04 通过 OpenAlex API 验证
 
 institutions:
   # 北美顶级高校
@@ -15,69 +16,69 @@ institutions:
     name: "Massachusetts Institute of Technology"
     country: "US"
     tags: ["AI", "Robotics", "Systems"]
-  - id: "I130769515"
+  - id: "I74973139"
     name: "Carnegie Mellon University"
     country: "US"
     tags: ["AI", "ML", "Robotics", "NLP"]
-  - id: "I136199984"
+  - id: "I95457486"
     name: "University of California, Berkeley"
     country: "US"
     tags: ["AI", "RL", "Systems"]
-  - id: "I27837315"
+  - id: "I20089843"
     name: "Princeton University"
     country: "US"
     tags: ["AI", "Theory"]
-  - id: "I141945490"
+  - id: "I201448701"
     name: "University of Washington"
     country: "US"
     tags: ["NLP", "CV", "Systems"]
 
   # 工业研究实验室
-  - id: "I1303153112"
+  - id: "I4210090411"
     name: "Google DeepMind"
     country: "UK"
     tags: ["AI", "RL", "Generative"]
-  - id: "I2778813966"
+  - id: "I4210161460"
     name: "OpenAI"
     country: "US"
     tags: ["LLM", "Alignment", "Generative"]
-  - id: "I4210108722"
-    name: "Meta AI"
+  - id: "I4210114444"
+    name: "Meta"
     country: "US"
     tags: ["NLP", "CV", "Generative"]
-  - id: "I1334687557"
+  - id: "I4210164937"
     name: "Microsoft Research"
-    country: "US"
+    country: "UK"
     tags: ["AI", "NLP", "Systems"]
-  - id: "I4200000054"
-    name: "Google Research"
+  - id: "I1291425158"
+    name: "Google"
     country: "US"
     tags: ["AI", "NLP", "Systems"]
 
   # 中国顶级高校
-  - id: "I136199984"
+  - id: "I99065089"
     name: "Tsinghua University"
     country: "CN"
     tags: ["AI", "NLP", "CV"]
-  - id: "I184490438"
+  - id: "I20231570"
     name: "Peking University"
     country: "CN"
     tags: ["AI", "NLP"]
-  - id: "I204722669"
+  - id: "I76130692"
     name: "Zhejiang University"
     country: "CN"
     tags: ["AI", "CV"]
 
   # 欧洲
-  - id: "I86987016"
+  - id: "I40120149"
     name: "University of Oxford"
     country: "UK"
     tags: ["AI", "NLP"]
-  - id: "I205783295"
+  - id: "I241749"
     name: "University of Cambridge"
     country: "UK"
     tags: ["AI", "ML"]
-  - id: "I114090438"
+  - id: "I35440088"
     name: "ETH Zurich"
     country: "CH"
     tags: ["CV", "Robotics", "Systems"]
@@ -88,7 +89,7 @@ institutions:
     country: "CA"
     tags: ["AI", "ML", "NLP"]
   - id: "I70931966"
-    name: "University of Montreal"
+    name: "Université de Montréal"
     country: "CA"
     tags: ["AI", "ML"]
 
@@ -98,51 +99,51 @@ researchers:
     name: "Li Fei-Fei"
     affiliation: "Stanford University"
     tags: ["CV", "AI"]
-  - id: "A5048491430"
+  - id: "A5108093963"
     name: "Geoffrey Hinton"
     affiliation: "University of Toronto"
     tags: ["Deep Learning", "Neural Networks"]
-  - id: "A5073272612"
+  - id: "A5086198262"
     name: "Yoshua Bengio"
-    affiliation: "University of Montreal"
+    affiliation: "Université de Montréal"
     tags: ["Deep Learning", "Generative"]
-  - id: "A5014726161"
+  - id: "A5001226970"
     name: "Yann LeCun"
     affiliation: "Meta AI / NYU"
     tags: ["Deep Learning", "CV"]
 
   # NLP / LLM
-  - id: "A5035954362"
+  - id: "A5046006076"
     name: "Christopher Manning"
     affiliation: "Stanford University"
     tags: ["NLP", "LLM"]
-  - id: "A5058870459"
+  - id: "A5025255782"
     name: "Percy Liang"
     affiliation: "Stanford University"
     tags: ["NLP", "LLM", "Benchmark"]
 
   # RL / Robotics
-  - id: "A5003442464"
+  - id: "A5049349154"
     name: "Pieter Abbeel"
     affiliation: "UC Berkeley"
     tags: ["RL", "Robotics"]
-  - id: "A5090417855"
+  - id: "A5026322200"
     name: "Sergey Levine"
     affiliation: "UC Berkeley"
     tags: ["RL", "Robotics"]
 
   # Generative Models
-  - id: "A5068889925"
+  - id: "A5004271128"
     name: "Ian Goodfellow"
     affiliation: "DeepMind"
     tags: ["GAN", "Generative"]
 
   # CV
-  - id: "A5069093804"
+  - id: "A5100700361"
     name: "Kaiming He"
     affiliation: "MIT"
     tags: ["CV", "ResNet"]
-  - id: "A5080835974"
+  - id: "A5049246408"
     name: "Ross Girshick"
     affiliation: "Meta AI"
     tags: ["CV", "Object Detection"]
@@ -151,26 +152,26 @@ researchers:
 presets:
   top_ai_labs:
     description: "顶级 AI 实验室最新高引论文"
-    institutions: ["I1303153112", "I2778813966", "I4210108722", "I1334687557"]
+    institutions: ["I4210090411", "I4210161460", "I4210114444", "I4210164937"]
     min_citations: 50
     min_h_index: 50
     year_from: 2022
 
   nlp_leaders:
     description: "NLP/LLM 领域顶级学者论文"
-    researchers: ["A5035954362", "A5058870459"]
-    institutions: ["I2778813966", "I4210108722"]
+    researchers: ["A5046006076", "A5025255782"]
+    institutions: ["I4210161460", "I4210114444"]
     min_citations: 100
     year_from: 2020
 
   deep_learning_pioneers:
     description: "深度学习三巨头 + 顶级学者"
-    researchers: ["A5048491430", "A5073272612", "A5014726161", "A5100450462", "A5069093804"]
+    researchers: ["A5108093963", "A5086198262", "A5001226970", "A5100450462", "A5100700361"]
     min_citations: 200
     year_from: 2018
 
   china_top_cs:
     description: "中国顶级高校 CS 高引论文"
-    institutions: ["I136199984", "I184490438", "I204722669"]
+    institutions: ["I99065089", "I20231570", "I76130692"]
     min_citations: 100
     year_from: 2020
