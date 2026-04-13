@@ -1,4 +1,5 @@
 """为论文添加一句话简介"""
+
 import asyncio
 import sys
 import os
@@ -35,7 +36,9 @@ async def main():
     # Add column if not exists
     async with engine.begin() as conn:
         try:
-            await conn.execute(text("ALTER TABLE papers ADD COLUMN summary VARCHAR(500)"))
+            await conn.execute(
+                text("ALTER TABLE papers ADD COLUMN summary VARCHAR(500)")
+            )
             print("Added summary column")
         except Exception as e:
             print(f"Column check: {e}")

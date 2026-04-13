@@ -6,11 +6,12 @@
 2. 基于两个领域摘要进行快速跨域关联分析
 3. 摘要过期管理（数据变更时标记为 stale）
 """
+
 import logging
 from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select
 
 from app.models.models import Domain, KnowledgeNode, Paper, Relation, gen_id
 from app.services.ai.llm_client import chat_completion, chat_completion_json
@@ -114,17 +115,17 @@ CROSS_DOMAIN_ANALYSIS_PROMPT = """你是一个跨领域知识关联分析专家�
 #  辅助函数
 # ══════════════════════════════════════════════════════════════
 
+
 def _normalize_domain(fields_of_study: str | None) -> str:
     """将论文的 fields_of_study 归一化为 domain 字符串"""
     from app.api.graph import _normalize_paper_domain
+
     return _normalize_paper_domain(fields_of_study)
 
 
 async def _ensure_domain_exists(db: AsyncSession, domain_name: str) -> Domain:
     """确保 Domain 记录存在，不存在则创建"""
-    result = await db.execute(
-        select(Domain).where(Domain.name == domain_name)
-    )
+    result = await db.execute(select(Domain).where(Domain.name == domain_name))
     domain = result.scalar_one_or_none()
     if not domain:
         domain = Domain(id=gen_id(), name=domain_name)
@@ -149,9 +150,7 @@ async def _get_domain_papers(db: AsyncSession, domain_name: str) -> list[Paper]:
     return [p for p in papers if _normalize_domain(p.fields_of_study) == domain_name]
 
 
-async def _get_domain_relations(
-    db: AsyncSession, node_ids: set[str]
-) -> list[Relation]:
+async def _get_domain_relations(db: AsyncSession, node_ids: set[str]) -> list[Relation]:
     """获取涉及指定节点的已确认关联"""
     if not node_ids:
         return []
@@ -167,6 +166,7 @@ async def _get_domain_relations(
 # ══════════════════════════════════════════════════════════════
 #  核心服务
 # ══════════════════════════════════════════════════════════════
+
 
 async def generate_domain_digest(db: AsyncSession, domain_name: str) -> Domain:
     """
@@ -201,7 +201,9 @@ async def generate_domain_digest(db: AsyncSession, domain_name: str) -> Domain:
     for r in relations:
         desc = (r.description or "")[:80]
         relations_text_lines.append(f"- [{r.relation_type}] {desc}")
-    relations_text = "\n".join(relations_text_lines) if relations_text_lines else "（暂无关联）"
+    relations_text = (
+        "\n".join(relations_text_lines) if relations_text_lines else "（暂无关联）"
+    )
 
     # 调用 LLM 生成摘要
     prompt = GENERATE_DIGEST_PROMPT.format(
@@ -216,7 +218,10 @@ async def generate_domain_digest(db: AsyncSession, domain_name: str) -> Domain:
 
     digest_md = await chat_completion(
         messages=[
-            {"role": "system", "content": "你是知识图谱摘要专家。请生成简洁、信息密度高的领域摘要。"},
+            {
+                "role": "system",
+                "content": "你是知识图谱摘要专家。请生成简洁、信息密度高的领域摘要。",
+            },
             {"role": "user", "content": prompt},
         ],
         temperature=0.3,
@@ -242,9 +247,7 @@ async def generate_domain_digest(db: AsyncSession, domain_name: str) -> Domain:
 
 async def get_or_generate_digest(db: AsyncSession, domain_name: str) -> Domain:
     """获取领域摘要，如果不存在或已过期则重新生成"""
-    result = await db.execute(
-        select(Domain).where(Domain.name == domain_name)
-    )
+    result = await db.execute(select(Domain).where(Domain.name == domain_name))
     domain = result.scalar_one_or_none()
 
     if domain and domain.digest_markdown and not domain.digest_is_stale:
@@ -258,9 +261,7 @@ async def regenerate_all_digests(db: AsyncSession) -> list[dict]:
     # 收集所有 domain 名称（来自 KnowledgeNode + Paper）
     domain_names = set()
 
-    kn_result = await db.execute(
-        select(KnowledgeNode.domain).distinct()
-    )
+    kn_result = await db.execute(select(KnowledgeNode.domain).distinct())
     for row in kn_result:
         domain_names.add(row[0])
 
@@ -272,11 +273,13 @@ async def regenerate_all_digests(db: AsyncSession) -> list[dict]:
     for name in sorted(domain_names):
         try:
             domain = await generate_domain_digest(db, name)
-            results.append({
-                "domain": name,
-                "status": "ok",
-                "version": domain.digest_version,
-            })
+            results.append(
+                {
+                    "domain": name,
+                    "status": "ok",
+                    "version": domain.digest_version,
+                }
+            )
         except Exception as e:
             logger.error(f"❌ 生成 {name} 摘要失败: {e}")
             results.append({"domain": name, "status": "error", "error": str(e)})
@@ -284,9 +287,7 @@ async def regenerate_all_digests(db: AsyncSession) -> list[dict]:
     return results
 
 
-async def cross_domain_analysis(
-    db: AsyncSession, domain_a: str, domain_b: str
-) -> dict:
+async def cross_domain_analysis(db: AsyncSession, domain_a: str, domain_b: str) -> dict:
     """
     基于两个领域的摘要进行跨域关联分析。
     如果摘要不存在则先生成。
@@ -305,7 +306,10 @@ async def cross_domain_analysis(
 
     result = await chat_completion_json(
         messages=[
-            {"role": "system", "content": "你是跨领域知识关联分析专家。请严格按照 JSON 格式返回分析结果。"},
+            {
+                "role": "system",
+                "content": "你是跨领域知识关联分析专家。请严格按照 JSON 格式返回分析结果。",
+            },
             {"role": "user", "content": prompt},
         ],
         temperature=0.5,
@@ -322,9 +326,7 @@ async def cross_domain_analysis(
 
 async def mark_domain_digest_stale(db: AsyncSession, domain_name: str) -> None:
     """标记领域摘要为过期（当领域数据变更时调用）"""
-    result = await db.execute(
-        select(Domain).where(Domain.name == domain_name)
-    )
+    result = await db.execute(select(Domain).where(Domain.name == domain_name))
     domain = result.scalar_one_or_none()
     if domain and domain.digest_markdown:
         domain.digest_is_stale = True

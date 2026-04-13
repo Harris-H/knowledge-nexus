@@ -1,7 +1,8 @@
 """
 领域摘要 API — 管理领域知识图谱摘要和基于摘要的跨域分析。
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -9,7 +10,6 @@ from app.schemas.schemas import (
     DomainDigestResponse,
     DomainDigestList,
     CrossDomainAnalysisRequest,
-    CrossDomainAnalysisResponse,
 )
 from app.services.digest_service import (
     generate_domain_digest,

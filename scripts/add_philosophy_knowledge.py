@@ -14,8 +14,10 @@ from datetime import datetime
 
 DB_PATH = "../backend/knowledge_nexus.db"
 
+
 def get_id():
     return uuid.uuid4().hex[:12]
+
 
 now = datetime.utcnow().isoformat()
 
@@ -209,147 +211,275 @@ nodes = [
 # 关系定义时使用节点名称，之后匹配为 ID
 relations_def = [
     # === 道家 ↔ 计算机 ===
-    ("无为 (Wu Wei / Non-Action)", "强化学习", "ANALOGOUS_TO",
-     "无为的'不干预、让系统自行找到最优路径'与强化学习中agent通过自主探索学习策略高度相似。探索-利用权衡(exploration-exploitation)就是'无为而无不为'的数学形式。"),
-    
-    ("无为 (Wu Wei / Non-Action)", "自监督学习 (Self-Supervised Learning)", "ANALOGOUS_TO",
-     "无为强调不人为施加标签/指导，让系统自己从数据中学习规律——这正是自监督学习的核心理念：不依赖人工标注，从数据自身结构中提取知识。"),
-    
-    ("阴阳 (Yin-Yang)", "生成对抗网络 (GAN)", "ANALOGOUS_TO",
-     "阴阳的对立统一、相互制约、动态平衡，精确对应GAN中生成器与判别器的对抗训练：双方互相博弈推动共同进化，达到纳什均衡。"),
-    
-    ("阴阳 (Yin-Yang)", "对比学习 (Contrastive Learning)", "ANALOGOUS_TO",
-     "阴阳思想——通过区分对立面来认识事物。对比学习同样通过区分正样本对和负样本对来学习特征表示，本质上都是'通过对比认识世界'。"),
-    
-    ("道法自然 (Tao Follows Nature)", "遗传算法", "INSPIRES",
-     "'道法自然'是仿生计算的哲学根基——从自然界的进化机制中学习优化策略，遗传算法直接模仿自然选择和遗传变异。"),
-    
-    ("道法自然 (Tao Follows Nature)", "蚁群优化算法", "INSPIRES",
-     "道法自然——从蚂蚁群体的觅食行为中提取优化算法，体现了'天地有大美而不言'中蕴含的算法智慧。"),
-    
-    ("物极必反 (Reversal at the Extreme)", "梯度下降与优化器", "ANALOGOUS_TO",
-     "物极必反与优化中的overshooting（步长过大导致震荡）、学习率衰减策略相似：当更新过于激进时需要反向调节，AdaGrad/Adam等自适应优化器就是这种'自我纠正'的体现。"),
-    
-    ("物极必反 (Reversal at the Extreme)", "Dropout 正则化", "ANALOGOUS_TO",
-     "物极必反的智慧：模型过于'强大'（过拟合）反而性能下降。Dropout通过随机'削弱'网络来增强泛化能力，完美诠释了'弱者道之用'。"),
-    
-    ("易经八卦 (I Ching / Book of Changes)", "信息熵与交叉熵", "INSPIRES",
-     "易经用阴(--)阳(—)二进制编码描述万物变化，莱布尼茨从中获得二进制灵感。二进制→香农信息论→信息熵，这是从易经到现代信息科学的直接传承线。"),
-    
-    ("道 (Tao / The Way)", "深度学习", "ANALOGOUS_TO",
-     "道'不可道'——无法用显式规则描述，但确实存在且运行着万物。深度学习的神经网络同样学到了无法用显式规则表达的'隐式知识'(implicit knowledge)，权重中蕴含的模式人类无法直接解读。"),
-    
+    (
+        "无为 (Wu Wei / Non-Action)",
+        "强化学习",
+        "ANALOGOUS_TO",
+        "无为的'不干预、让系统自行找到最优路径'与强化学习中agent通过自主探索学习策略高度相似。探索-利用权衡(exploration-exploitation)就是'无为而无不为'的数学形式。",
+    ),
+    (
+        "无为 (Wu Wei / Non-Action)",
+        "自监督学习 (Self-Supervised Learning)",
+        "ANALOGOUS_TO",
+        "无为强调不人为施加标签/指导，让系统自己从数据中学习规律——这正是自监督学习的核心理念：不依赖人工标注，从数据自身结构中提取知识。",
+    ),
+    (
+        "阴阳 (Yin-Yang)",
+        "生成对抗网络 (GAN)",
+        "ANALOGOUS_TO",
+        "阴阳的对立统一、相互制约、动态平衡，精确对应GAN中生成器与判别器的对抗训练：双方互相博弈推动共同进化，达到纳什均衡。",
+    ),
+    (
+        "阴阳 (Yin-Yang)",
+        "对比学习 (Contrastive Learning)",
+        "ANALOGOUS_TO",
+        "阴阳思想——通过区分对立面来认识事物。对比学习同样通过区分正样本对和负样本对来学习特征表示，本质上都是'通过对比认识世界'。",
+    ),
+    (
+        "道法自然 (Tao Follows Nature)",
+        "遗传算法",
+        "INSPIRES",
+        "'道法自然'是仿生计算的哲学根基——从自然界的进化机制中学习优化策略，遗传算法直接模仿自然选择和遗传变异。",
+    ),
+    (
+        "道法自然 (Tao Follows Nature)",
+        "蚁群优化算法",
+        "INSPIRES",
+        "道法自然——从蚂蚁群体的觅食行为中提取优化算法，体现了'天地有大美而不言'中蕴含的算法智慧。",
+    ),
+    (
+        "物极必反 (Reversal at the Extreme)",
+        "梯度下降与优化器",
+        "ANALOGOUS_TO",
+        "物极必反与优化中的overshooting（步长过大导致震荡）、学习率衰减策略相似：当更新过于激进时需要反向调节，AdaGrad/Adam等自适应优化器就是这种'自我纠正'的体现。",
+    ),
+    (
+        "物极必反 (Reversal at the Extreme)",
+        "Dropout 正则化",
+        "ANALOGOUS_TO",
+        "物极必反的智慧：模型过于'强大'（过拟合）反而性能下降。Dropout通过随机'削弱'网络来增强泛化能力，完美诠释了'弱者道之用'。",
+    ),
+    (
+        "易经八卦 (I Ching / Book of Changes)",
+        "信息熵与交叉熵",
+        "INSPIRES",
+        "易经用阴(--)阳(—)二进制编码描述万物变化，莱布尼茨从中获得二进制灵感。二进制→香农信息论→信息熵，这是从易经到现代信息科学的直接传承线。",
+    ),
+    (
+        "道 (Tao / The Way)",
+        "深度学习",
+        "ANALOGOUS_TO",
+        "道'不可道'——无法用显式规则描述，但确实存在且运行着万物。深度学习的神经网络同样学到了无法用显式规则表达的'隐式知识'(implicit knowledge)，权重中蕴含的模式人类无法直接解读。",
+    ),
     # === 儒家 ↔ 计算机 ===
-    ("格物致知 (Investigation of Things)", "预训练-微调范式", "ANALOGOUS_TO",
-     "格物致知——先广泛研究事物(预训练/通识学习)，再专精某一领域(微调)。这与现代LLM的预训练-微调范式完全吻合：先在海量数据上学习通用知识，再针对特定任务精调。"),
-    
-    ("中庸之道 (The Doctrine of the Mean)", "批量归一化 (Batch Normalization)", "ANALOGOUS_TO",
-     "中庸追求'不偏不倚'的平衡状态。Batch Normalization将激活值归一化到均值为0、方差为1的平衡分布，防止极端值，使训练稳定——这是技术层面的'中庸之道'。"),
-    
-    ("中庸之道 (The Doctrine of the Mean)", "RLHF (人类反馈强化学习)", "ANALOGOUS_TO",
-     "中庸在多种价值/需求之间寻找平衡。RLHF同样试图在helpfulness、harmlessness、honesty之间找到平衡点，用人类反馈校准模型的输出，避免走向任何极端。"),
-    
+    (
+        "格物致知 (Investigation of Things)",
+        "预训练-微调范式",
+        "ANALOGOUS_TO",
+        "格物致知——先广泛研究事物(预训练/通识学习)，再专精某一领域(微调)。这与现代LLM的预训练-微调范式完全吻合：先在海量数据上学习通用知识，再针对特定任务精调。",
+    ),
+    (
+        "中庸之道 (The Doctrine of the Mean)",
+        "批量归一化 (Batch Normalization)",
+        "ANALOGOUS_TO",
+        "中庸追求'不偏不倚'的平衡状态。Batch Normalization将激活值归一化到均值为0、方差为1的平衡分布，防止极端值，使训练稳定——这是技术层面的'中庸之道'。",
+    ),
+    (
+        "中庸之道 (The Doctrine of the Mean)",
+        "RLHF (人类反馈强化学习)",
+        "ANALOGOUS_TO",
+        "中庸在多种价值/需求之间寻找平衡。RLHF同样试图在helpfulness、harmlessness、honesty之间找到平衡点，用人类反馈校准模型的输出，避免走向任何极端。",
+    ),
     # === 西方哲学 ↔ 计算机 ===
-    ("辩证法 (Dialectics)", "生成对抗网络 (GAN)", "ANALOGOUS_TO",
-     "辩证法的正题→反题→合题与GAN训练过程同构：生成器(正题)产出，判别器(反题)否定，对抗训练的均衡(合题)产出更好的生成能力。"),
-    
-    ("辩证法 (Dialectics)", "思维链推理 (Chain of Thought)", "ANALOGOUS_TO",
-     "辩证法的步进式推理——从正题出发，经过反驳与综合，逐步深化认识。CoT同样将复杂问题分解为逐步推理的链条，通过中间步骤达成更准确的结论。"),
-    
-    ("现象学 (Phenomenology)", "多模态学习 (Multimodal Learning)", "ANALOGOUS_TO",
-     "现象学强调回到直接体验——人的认知是视觉、听觉、触觉等多感官的整合。多模态学习正是让AI整合文本、图像、音频等多种'感知通道'，模拟人的全方位体验式认知。"),
-    
-    ("存在主义 (Existentialism)", "AI Agent (智能体)", "ANALOGOUS_TO",
-     "'存在先于本质'——Agent也是先被'抛入'环境(exist)，再通过与环境交互、做出选择来定义自己的'能力'(essence)。Agent的自主决策能力呼应了存在主义对自由选择的强调。"),
-    
-    ("实用主义 (Pragmatism)", "提示工程 (Prompt Engineering)", "ANALOGOUS_TO",
-     "实用主义的'有效即真理'与Prompt Engineering高度契合——不追求理论完美的提示，而是反复试验找到实际效果最好的Prompt。评估标准是输出质量而非理论优雅。"),
-    
-    ("系统论 (Systems Theory)", "涌现能力 (Emergent Abilities)", "ANALOGOUS_TO",
-     "系统论的核心命题'整体大于部分之和'精确预言了LLM的涌现能力——当模型规模超过阈值，出现了单个神经元或小规模模型无法解释的全新能力。"),
-    
-    ("系统论 (Systems Theory)", "多Agent系统 (Multi-Agent)", "ANALOGOUS_TO",
-     "系统论关注组件间的交互产生的涌现行为。多Agent系统中，多个Agent的协作/竞争产生了单个Agent不具备的集体智能，正是系统论的直接体现。"),
-    
-    ("解构主义 (Deconstruction)", "注意力机制", "ANALOGOUS_TO",
-     "解构主义拆解文本的固定层级结构，揭示每个元素在不同上下文中的多重意义。Attention机制同样打破了固定的序列处理顺序，让每个token根据上下文动态获取不同权重的信息。"),
-    
-    ("认识论 (Epistemology)", "检索增强生成 (RAG)", "ANALOGOUS_TO",
-     "认识论探讨知识的来源和可靠性。RAG体现了一种认识论立场：承认模型内部知识可能过时/错误，因此通过检索外部可靠知识源来增强，这是'经验主义+理性主义'的混合认识论。"),
-    
-    ("功利主义 (Utilitarianism)", "RLHF (人类反馈强化学习)", "ANALOGOUS_TO",
-     "功利主义的'最大化效用总和'直接对应RLHF中reward model的设计：用奖励信号量化人类对输出的满意度，训练模型最大化这个'效用函数'。AI对齐问题本质上是功利主义的计算化。"),
-    
-    ("电车难题 (Trolley Problem)", "RLHF (人类反馈强化学习)", "RELATED_TO",
-     "电车难题揭示的价值冲突是AI对齐的核心挑战：当不同人类价值观冲突时，AI应如何决策？RLHF试图通过人类反馈解决这个问题，但电车难题提醒我们这并非总能达成一致。"),
-    
-    ("维特根斯坦语言游戏 (Language Games)", "大语言模型 (LLM)", "ANALOGOUS_TO",
-     "维特根斯坦认为语言意义来源于使用(language game)，而非对应外部实在。LLM正是通过学习海量语言使用样本(语言游戏的统计)来理解语义，它不'知道'世界，但'掌握'了语言游戏的规则。"),
-    
-    ("维特根斯坦语言游戏 (Language Games)", "上下文学习 (In-Context Learning)", "ANALOGOUS_TO",
-     "语言游戏理论：意义由使用上下文决定。In-Context Learning同样依赖上下文(few-shot examples)来确定当前任务的'规则'——给不同上下文就玩不同的'语言游戏'。"),
-    
-    ("留白 (Negative Space / Ma)", "Dropout 正则化", "ANALOGOUS_TO",
-     "留白的'空白即力量'——刻意的缺失反而增强整体效果。Dropout随机'留白'(置零部分神经元)反而提升模型泛化能力，空白成为正则化的手段。"),
-    
-    ("留白 (Negative Space / Ma)", "量化与模型压缩", "ANALOGOUS_TO",
-     "留白艺术——用更少表达更多。模型量化/压缩通过减少参数精度和数量，在保持核心能力的同时大幅缩小模型体积，'少即是多'的工程实践。"),
-    
+    (
+        "辩证法 (Dialectics)",
+        "生成对抗网络 (GAN)",
+        "ANALOGOUS_TO",
+        "辩证法的正题→反题→合题与GAN训练过程同构：生成器(正题)产出，判别器(反题)否定，对抗训练的均衡(合题)产出更好的生成能力。",
+    ),
+    (
+        "辩证法 (Dialectics)",
+        "思维链推理 (Chain of Thought)",
+        "ANALOGOUS_TO",
+        "辩证法的步进式推理——从正题出发，经过反驳与综合，逐步深化认识。CoT同样将复杂问题分解为逐步推理的链条，通过中间步骤达成更准确的结论。",
+    ),
+    (
+        "现象学 (Phenomenology)",
+        "多模态学习 (Multimodal Learning)",
+        "ANALOGOUS_TO",
+        "现象学强调回到直接体验——人的认知是视觉、听觉、触觉等多感官的整合。多模态学习正是让AI整合文本、图像、音频等多种'感知通道'，模拟人的全方位体验式认知。",
+    ),
+    (
+        "存在主义 (Existentialism)",
+        "AI Agent (智能体)",
+        "ANALOGOUS_TO",
+        "'存在先于本质'——Agent也是先被'抛入'环境(exist)，再通过与环境交互、做出选择来定义自己的'能力'(essence)。Agent的自主决策能力呼应了存在主义对自由选择的强调。",
+    ),
+    (
+        "实用主义 (Pragmatism)",
+        "提示工程 (Prompt Engineering)",
+        "ANALOGOUS_TO",
+        "实用主义的'有效即真理'与Prompt Engineering高度契合——不追求理论完美的提示，而是反复试验找到实际效果最好的Prompt。评估标准是输出质量而非理论优雅。",
+    ),
+    (
+        "系统论 (Systems Theory)",
+        "涌现能力 (Emergent Abilities)",
+        "ANALOGOUS_TO",
+        "系统论的核心命题'整体大于部分之和'精确预言了LLM的涌现能力——当模型规模超过阈值，出现了单个神经元或小规模模型无法解释的全新能力。",
+    ),
+    (
+        "系统论 (Systems Theory)",
+        "多Agent系统 (Multi-Agent)",
+        "ANALOGOUS_TO",
+        "系统论关注组件间的交互产生的涌现行为。多Agent系统中，多个Agent的协作/竞争产生了单个Agent不具备的集体智能，正是系统论的直接体现。",
+    ),
+    (
+        "解构主义 (Deconstruction)",
+        "注意力机制",
+        "ANALOGOUS_TO",
+        "解构主义拆解文本的固定层级结构，揭示每个元素在不同上下文中的多重意义。Attention机制同样打破了固定的序列处理顺序，让每个token根据上下文动态获取不同权重的信息。",
+    ),
+    (
+        "认识论 (Epistemology)",
+        "检索增强生成 (RAG)",
+        "ANALOGOUS_TO",
+        "认识论探讨知识的来源和可靠性。RAG体现了一种认识论立场：承认模型内部知识可能过时/错误，因此通过检索外部可靠知识源来增强，这是'经验主义+理性主义'的混合认识论。",
+    ),
+    (
+        "功利主义 (Utilitarianism)",
+        "RLHF (人类反馈强化学习)",
+        "ANALOGOUS_TO",
+        "功利主义的'最大化效用总和'直接对应RLHF中reward model的设计：用奖励信号量化人类对输出的满意度，训练模型最大化这个'效用函数'。AI对齐问题本质上是功利主义的计算化。",
+    ),
+    (
+        "电车难题 (Trolley Problem)",
+        "RLHF (人类反馈强化学习)",
+        "RELATED_TO",
+        "电车难题揭示的价值冲突是AI对齐的核心挑战：当不同人类价值观冲突时，AI应如何决策？RLHF试图通过人类反馈解决这个问题，但电车难题提醒我们这并非总能达成一致。",
+    ),
+    (
+        "维特根斯坦语言游戏 (Language Games)",
+        "大语言模型 (LLM)",
+        "ANALOGOUS_TO",
+        "维特根斯坦认为语言意义来源于使用(language game)，而非对应外部实在。LLM正是通过学习海量语言使用样本(语言游戏的统计)来理解语义，它不'知道'世界，但'掌握'了语言游戏的规则。",
+    ),
+    (
+        "维特根斯坦语言游戏 (Language Games)",
+        "上下文学习 (In-Context Learning)",
+        "ANALOGOUS_TO",
+        "语言游戏理论：意义由使用上下文决定。In-Context Learning同样依赖上下文(few-shot examples)来确定当前任务的'规则'——给不同上下文就玩不同的'语言游戏'。",
+    ),
+    (
+        "留白 (Negative Space / Ma)",
+        "Dropout 正则化",
+        "ANALOGOUS_TO",
+        "留白的'空白即力量'——刻意的缺失反而增强整体效果。Dropout随机'留白'(置零部分神经元)反而提升模型泛化能力，空白成为正则化的手段。",
+    ),
+    (
+        "留白 (Negative Space / Ma)",
+        "量化与模型压缩",
+        "ANALOGOUS_TO",
+        "留白艺术——用更少表达更多。模型量化/压缩通过减少参数精度和数量，在保持核心能力的同时大幅缩小模型体积，'少即是多'的工程实践。",
+    ),
     # === 道家 ↔ 其他自然科学 ===
-    ("阴阳 (Yin-Yang)", "热力学第二定律（熵增）", "ANALOGOUS_TO",
-     "阴阳的动态平衡与热力学中的有序(低熵)→无序(高熵)过程相呼应。阴阳在封闭系统中趋向混合(熵增)，但在开放系统中可维持有序结构(耗散结构)。"),
-    
-    ("物极必反 (Reversal at the Extreme)", "混沌理论（蝴蝶效应）", "ANALOGOUS_TO",
-     "物极必反描述系统在极端点的突变行为，混沌理论同样研究系统在临界点附近的分岔和相变——两者都关注'临界状态的质变'。"),
-    
-    ("道 (Tao / The Way)", "涌现与还原论", "ANALOGOUS_TO",
-     "道是不可还原的整体性存在，'道生万物'但道本身不是万物的简单叠加。这与涌现论的核心观点一致：复杂系统的整体行为不能还原为部件的简单组合。"),
-    
+    (
+        "阴阳 (Yin-Yang)",
+        "热力学第二定律（熵增）",
+        "ANALOGOUS_TO",
+        "阴阳的动态平衡与热力学中的有序(低熵)→无序(高熵)过程相呼应。阴阳在封闭系统中趋向混合(熵增)，但在开放系统中可维持有序结构(耗散结构)。",
+    ),
+    (
+        "物极必反 (Reversal at the Extreme)",
+        "混沌理论（蝴蝶效应）",
+        "ANALOGOUS_TO",
+        "物极必反描述系统在极端点的突变行为，混沌理论同样研究系统在临界点附近的分岔和相变——两者都关注'临界状态的质变'。",
+    ),
+    (
+        "道 (Tao / The Way)",
+        "涌现与还原论",
+        "ANALOGOUS_TO",
+        "道是不可还原的整体性存在，'道生万物'但道本身不是万物的简单叠加。这与涌现论的核心观点一致：复杂系统的整体行为不能还原为部件的简单组合。",
+    ),
     # === 西方哲学之间的关系 ===
-    ("辩证法 (Dialectics)", "阴阳 (Yin-Yang)", "ANALOGOUS_TO",
-     "黑格尔辩证法的对立统一与中国阴阳思想高度相似——都强调矛盾双方相互依存、相互转化、在对抗中发展。但阴阳更强调循环平衡，辩证法更强调螺旋上升。"),
-    
-    ("系统论 (Systems Theory)", "涌现与还原论", "BUILDS_ON",
-     "系统论直接建立在涌现概念之上：'整体大于部分之和'就是涌现性的核心表述。系统论是对涌现现象的方法论框架化。"),
-    
-    ("认识论 (Epistemology)", "贝叶斯定理", "RELATED_TO",
-     "贝叶斯定理为认识论提供了数学形式：先验信念 + 新证据 → 后验信念。贝叶斯认识论是将哲学认识论精确化的重要尝试。"),
-    
-    ("功利主义 (Utilitarianism)", "纳什均衡", "RELATED_TO",
-     "功利主义追求效用最大化，博弈论中的纳什均衡是多方各自追求效用最大化时的均衡状态。从个体功利到集体均衡，博弈论是功利主义的多人扩展。"),
-    
+    (
+        "辩证法 (Dialectics)",
+        "阴阳 (Yin-Yang)",
+        "ANALOGOUS_TO",
+        "黑格尔辩证法的对立统一与中国阴阳思想高度相似——都强调矛盾双方相互依存、相互转化、在对抗中发展。但阴阳更强调循环平衡，辩证法更强调螺旋上升。",
+    ),
+    (
+        "系统论 (Systems Theory)",
+        "涌现与还原论",
+        "BUILDS_ON",
+        "系统论直接建立在涌现概念之上：'整体大于部分之和'就是涌现性的核心表述。系统论是对涌现现象的方法论框架化。",
+    ),
+    (
+        "认识论 (Epistemology)",
+        "贝叶斯定理",
+        "RELATED_TO",
+        "贝叶斯定理为认识论提供了数学形式：先验信念 + 新证据 → 后验信念。贝叶斯认识论是将哲学认识论精确化的重要尝试。",
+    ),
+    (
+        "功利主义 (Utilitarianism)",
+        "纳什均衡",
+        "RELATED_TO",
+        "功利主义追求效用最大化，博弈论中的纳什均衡是多方各自追求效用最大化时的均衡状态。从个体功利到集体均衡，博弈论是功利主义的多人扩展。",
+    ),
     # === 哲学内部关系 ===
-    ("道 (Tao / The Way)", "无为 (Wu Wei / Non-Action)", "ENABLES",
-     "道是本体论，无为是方法论。理解了道的运行法则，自然引出无为的行事方式——顺道而行即是无为。"),
-    
-    ("道 (Tao / The Way)", "阴阳 (Yin-Yang)", "ENABLES",
-     "道的运行展现为阴阳的交互：'一阴一阳之谓道'。阴阳是道的动态表现形式。"),
-    
-    ("道 (Tao / The Way)", "道法自然 (Tao Follows Nature)", "ENABLES",
-     "'道法自然'是理解道的关键命题——道的最高法则就是自然本身。"),
-    
-    ("道 (Tao / The Way)", "物极必反 (Reversal at the Extreme)", "ENABLES",
-     "'反者道之动'——物极必反是道的运动规律的体现。"),
-    
-    ("阴阳 (Yin-Yang)", "中庸之道 (The Doctrine of the Mean)", "RELATED_TO",
-     "阴阳平衡思想与中庸的'执两用中'相通：两者都追求对立面之间的最优平衡状态。"),
-    
-    ("格物致知 (Investigation of Things)", "认识论 (Epistemology)", "RELATED_TO",
-     "格物致知是中国式认识论——通过实践研究事物来获取知识，与西方经验主义认识论相呼应。"),
-    
-    ("实用主义 (Pragmatism)", "格物致知 (Investigation of Things)", "ANALOGOUS_TO",
-     "实用主义的'有效即真理'与格物致知的'实践出真知'高度相似——都强调知识的实践性和效果验证。"),
+    (
+        "道 (Tao / The Way)",
+        "无为 (Wu Wei / Non-Action)",
+        "ENABLES",
+        "道是本体论，无为是方法论。理解了道的运行法则，自然引出无为的行事方式——顺道而行即是无为。",
+    ),
+    (
+        "道 (Tao / The Way)",
+        "阴阳 (Yin-Yang)",
+        "ENABLES",
+        "道的运行展现为阴阳的交互：'一阴一阳之谓道'。阴阳是道的动态表现形式。",
+    ),
+    (
+        "道 (Tao / The Way)",
+        "道法自然 (Tao Follows Nature)",
+        "ENABLES",
+        "'道法自然'是理解道的关键命题——道的最高法则就是自然本身。",
+    ),
+    (
+        "道 (Tao / The Way)",
+        "物极必反 (Reversal at the Extreme)",
+        "ENABLES",
+        "'反者道之动'——物极必反是道的运动规律的体现。",
+    ),
+    (
+        "阴阳 (Yin-Yang)",
+        "中庸之道 (The Doctrine of the Mean)",
+        "RELATED_TO",
+        "阴阳平衡思想与中庸的'执两用中'相通：两者都追求对立面之间的最优平衡状态。",
+    ),
+    (
+        "格物致知 (Investigation of Things)",
+        "认识论 (Epistemology)",
+        "RELATED_TO",
+        "格物致知是中国式认识论——通过实践研究事物来获取知识，与西方经验主义认识论相呼应。",
+    ),
+    (
+        "实用主义 (Pragmatism)",
+        "格物致知 (Investigation of Things)",
+        "ANALOGOUS_TO",
+        "实用主义的'有效即真理'与格物致知的'实践出真知'高度相似——都强调知识的实践性和效果验证。",
+    ),
 ]
+
 
 def main():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
+
     # 1. 插入知识节点
     node_name_to_id = {}
     inserted_nodes = 0
     skipped_nodes = 0
-    
+
     for node in nodes:
         # 检查是否已存在
         cursor.execute("SELECT id FROM knowledge_nodes WHERE name = ?", (node["name"],))
@@ -359,37 +489,48 @@ def main():
             skipped_nodes += 1
             print(f"  ⏩ 已存在: {node['name']}")
             continue
-        
+
         nid = get_id()
         node_name_to_id[node["name"]] = nid
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO knowledge_nodes 
             (id, name, node_type, domain, description, summary, source_info, year, tags, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            nid, node["name"], node["node_type"], node["domain"],
-            node["description"], node["summary"], None, node.get("year"),
-            node.get("tags"), now, now
-        ))
+        """,
+            (
+                nid,
+                node["name"],
+                node["node_type"],
+                node["domain"],
+                node["description"],
+                node["summary"],
+                None,
+                node.get("year"),
+                node.get("tags"),
+                now,
+                now,
+            ),
+        )
         inserted_nodes += 1
         print(f"  ✅ 新增节点: {node['name']} [{node['node_type']}|{node['domain']}]")
-    
+
     print(f"\n📊 节点: 新增 {inserted_nodes}, 跳过 {skipped_nodes}")
-    
+
     # 2. 构建全库名称→ID映射
     cursor.execute("SELECT id, name FROM knowledge_nodes")
     for row in cursor.fetchall():
         node_name_to_id[row[1]] = row[0]
-    
+
     # 3. 插入关系
     inserted_rels = 0
     skipped_rels = 0
     failed_rels = 0
-    
+
     for src_name, tgt_name, rel_type, desc in relations_def:
         src_id = node_name_to_id.get(src_name)
         tgt_id = node_name_to_id.get(tgt_name)
-        
+
         if not src_id or not tgt_id:
             failed_rels += 1
             missing = []
@@ -399,33 +540,47 @@ def main():
                 missing.append(f"目标'{tgt_name}'")
             print(f"  ❌ 找不到节点: {', '.join(missing)}")
             continue
-        
+
         # 检查是否已存在
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT id FROM relations 
             WHERE source_id = ? AND target_id = ? AND relation_type = ?
-        """, (src_id, tgt_id, rel_type))
+        """,
+            (src_id, tgt_id, rel_type),
+        )
         if cursor.fetchone():
             skipped_rels += 1
             print(f"  ⏩ 关系已存在: {src_name} --{rel_type}--> {tgt_name}")
             continue
-        
+
         rid = get_id()
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO relations 
             (id, source_id, target_id, relation_type, source_type, target_type, 
              description, confidence, ai_generated, status, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            rid, src_id, tgt_id, rel_type,
-            "knowledge_node", "knowledge_node",
-            desc, 1.0, False, "confirmed", now
-        ))
+        """,
+            (
+                rid,
+                src_id,
+                tgt_id,
+                rel_type,
+                "knowledge_node",
+                "knowledge_node",
+                desc,
+                1.0,
+                False,
+                "confirmed",
+                now,
+            ),
+        )
         inserted_rels += 1
         print(f"  ✅ {src_name} --{rel_type}--> {tgt_name}")
-    
+
     conn.commit()
-    
+
     # 统计
     cursor.execute("SELECT COUNT(*) FROM knowledge_nodes")
     total_nodes = cursor.fetchone()[0]
@@ -433,12 +588,13 @@ def main():
     total_rels = cursor.fetchone()[0]
     cursor.execute("SELECT DISTINCT domain FROM knowledge_nodes")
     domains = [r[0] for r in cursor.fetchall()]
-    
+
     print(f"\n📊 关系: 新增 {inserted_rels}, 跳过 {skipped_rels}, 失败 {failed_rels}")
     print(f"\n🎉 数据库总计: {total_nodes} 节点, {total_rels} 关系")
     print(f"📌 所有领域: {', '.join(sorted(domains))}")
-    
+
     conn.close()
+
 
 if __name__ == "__main__":
     print("=" * 60)

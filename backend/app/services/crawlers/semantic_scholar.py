@@ -25,7 +25,9 @@ class SemanticScholarCrawler(BaseCrawler):
 
     def __init__(self, api_key: str = "", rate_limit: float = 1.0):
         # S2 API 是合法接口调用，使用 API 专用头即可
-        super().__init__(rate_limit=rate_limit, rate_jitter=0.3, use_browser_headers=False)
+        super().__init__(
+            rate_limit=rate_limit, rate_jitter=0.3, use_browser_headers=False
+        )
         self.api_key = api_key
 
     async def __aenter__(self):
@@ -35,8 +37,12 @@ class SemanticScholarCrawler(BaseCrawler):
         return self
 
     async def search_papers(
-        self, query: str, year_from: int = 2016, year_to: int = 2026,
-        min_citations: int = 100, limit: int = 100,
+        self,
+        query: str,
+        year_from: int = 2016,
+        year_to: int = 2026,
+        min_citations: int = 100,
+        limit: int = 100,
     ) -> list[PaperMeta]:
         """搜索高引用论文
 
@@ -55,7 +61,9 @@ class SemanticScholarCrawler(BaseCrawler):
 
             # S2 API offset 上限保护
             if offset >= S2_MAX_OFFSET:
-                logger.warning(f"Reached S2 API offset limit ({S2_MAX_OFFSET}) for '{query}'")
+                logger.warning(
+                    f"Reached S2 API offset limit ({S2_MAX_OFFSET}) for '{query}'"
+                )
                 break
 
             actual_limit = min(batch_size, S2_MAX_OFFSET - offset)
@@ -75,7 +83,9 @@ class SemanticScholarCrawler(BaseCrawler):
             if not data:
                 consecutive_empty += 1
                 if consecutive_empty >= 3:
-                    logger.warning(f"3 consecutive empty responses, stopping search for '{query}'")
+                    logger.warning(
+                        f"3 consecutive empty responses, stopping search for '{query}'"
+                    )
                     break
                 continue
 
@@ -151,7 +161,7 @@ class SemanticScholarCrawler(BaseCrawler):
         for i in range(0, len(paper_ids), 500):
             if self.is_cancelled:
                 break
-            batch = paper_ids[i:i + 500]
+            batch = paper_ids[i : i + 500]
             data = await self._post_json(
                 f"{S2_API_BASE}/paper/batch",
                 params={"fields": S2_SEARCH_FIELDS},
@@ -165,7 +175,9 @@ class SemanticScholarCrawler(BaseCrawler):
                             results.append(paper)
         return results
 
-    async def _post_json(self, url: str, params: dict | None = None, json_body: dict | None = None) -> list | None:
+    async def _post_json(
+        self, url: str, params: dict | None = None, json_body: dict | None = None
+    ) -> list | None:
         """POST JSON 请求（用于 batch API）"""
         if self.is_cancelled:
             return None
@@ -249,7 +261,9 @@ class SemanticScholarCrawler(BaseCrawler):
             url=data.get("url"),
             pdf_url=pdf_info.get("url"),
             citation_count=safe_int(data.get("citationCount"), 0),
-            influential_citation_count=safe_int(data.get("influentialCitationCount"), 0),
+            influential_citation_count=safe_int(
+                data.get("influentialCitationCount"), 0
+            ),
             references=refs,
             fields_of_study=fields,
         )

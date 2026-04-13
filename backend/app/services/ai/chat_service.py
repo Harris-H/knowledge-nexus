@@ -13,8 +13,8 @@ AI 对话服务 — 对话式知识发现界面的后端编排层。
   - list_domains: 列出所有领域
   - general_chat: 通用问答（无需调用内部服务）
 """
+
 import logging
-import json
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -85,25 +85,42 @@ ROUTER_SYSTEM_PROMPT = """你是 Knowledge Nexus 的 AI 助手，一个跨领域
 ```"""
 
 DOMAIN_ZH_TO_EN = {
-    "计算机": "computer_science", "计算机科学": "computer_science", "CS": "computer_science",
-    "语音": "speech_ai", "语音AI": "speech_ai", "语音识别": "speech_ai",
-    "生物": "biology", "生物学": "biology",
-    "物理": "physics", "物理学": "physics",
-    "数学": "mathematics", "数学学": "mathematics",
-    "神经科学": "neuroscience", "脑科学": "neuroscience",
+    "计算机": "computer_science",
+    "计算机科学": "computer_science",
+    "CS": "computer_science",
+    "语音": "speech_ai",
+    "语音AI": "speech_ai",
+    "语音识别": "speech_ai",
+    "生物": "biology",
+    "生物学": "biology",
+    "物理": "physics",
+    "物理学": "physics",
+    "数学": "mathematics",
+    "数学学": "mathematics",
+    "神经科学": "neuroscience",
+    "脑科学": "neuroscience",
     "化学": "chemistry",
-    "工程": "engineering", "工程学": "engineering",
-    "心理学": "psychology", "心理": "psychology",
-    "生态": "ecology", "生态学": "ecology",
+    "工程": "engineering",
+    "工程学": "engineering",
+    "心理学": "psychology",
+    "心理": "psychology",
+    "生态": "ecology",
+    "生态学": "ecology",
     "哲学": "philosophy",
-    "社会学": "sociology", "社会": "sociology",
-    "经济": "economics", "经济学": "economics",
+    "社会学": "sociology",
+    "社会": "sociology",
+    "经济": "economics",
+    "经济学": "economics",
     "艺术": "art",
-    "认知科学": "cognitive_science", "认知": "cognitive_science",
-    "历史": "history", "历史学": "history",
+    "认知科学": "cognitive_science",
+    "认知": "cognitive_science",
+    "历史": "history",
+    "历史学": "history",
     "生命科学": "life_science",
-    "医学": "medicine", "医": "medicine",
-    "军事": "military_science", "军事学": "military_science",
+    "医学": "medicine",
+    "医": "medicine",
+    "军事": "military_science",
+    "军事学": "military_science",
 }
 
 DOMAIN_LABELS = {
@@ -133,12 +150,11 @@ DOMAIN_LABELS = {
 #  辅助函数
 # ══════════════════════════════════════════════════════════════
 
+
 async def _find_node_by_name(db: AsyncSession, name: str) -> dict | None:
     """通过名称模糊匹配知识节点或论文"""
     # 精确匹配知识节点
-    result = await db.execute(
-        select(KnowledgeNode).where(KnowledgeNode.name == name)
-    )
+    result = await db.execute(select(KnowledgeNode).where(KnowledgeNode.name == name))
     kn = result.scalar_one_or_none()
     if kn:
         return {"id": kn.id, "name": kn.name, "type": "knowledge_node"}
@@ -154,13 +170,16 @@ async def _find_node_by_name(db: AsyncSession, name: str) -> dict | None:
     # 模糊匹配论文
     result = await db.execute(
         select(Paper).where(
-            Paper.title.ilike(f"%{name}%") |
-            Paper.key_contributions.ilike(f"%{name}%")
+            Paper.title.ilike(f"%{name}%") | Paper.key_contributions.ilike(f"%{name}%")
         )
     )
     paper = result.scalars().first()
     if paper:
-        return {"id": paper.id, "name": paper.key_contributions or paper.title, "type": "paper"}
+        return {
+            "id": paper.id,
+            "name": paper.key_contributions or paper.title,
+            "type": "paper",
+        }
 
     return None
 
@@ -171,34 +190,47 @@ async def _search_knowledge(db: AsyncSession, query: str) -> dict:
 
     # 搜索知识节点
     result = await db.execute(
-        select(KnowledgeNode).where(
-            KnowledgeNode.name.ilike(f"%{query}%") |
-            KnowledgeNode.description.ilike(f"%{query}%") |
-            KnowledgeNode.summary.ilike(f"%{query}%")
-        ).limit(10)
+        select(KnowledgeNode)
+        .where(
+            KnowledgeNode.name.ilike(f"%{query}%")
+            | KnowledgeNode.description.ilike(f"%{query}%")
+            | KnowledgeNode.summary.ilike(f"%{query}%")
+        )
+        .limit(10)
     )
     for kn in result.scalars().all():
-        items.append({
-            "id": kn.id, "name": kn.name, "type": "knowledge_node",
-            "domain": kn.domain, "node_type": kn.node_type,
-            "summary": kn.summary or (kn.description or "")[:150],
-        })
+        items.append(
+            {
+                "id": kn.id,
+                "name": kn.name,
+                "type": "knowledge_node",
+                "domain": kn.domain,
+                "node_type": kn.node_type,
+                "summary": kn.summary or (kn.description or "")[:150],
+            }
+        )
 
     # 搜索论文
     result = await db.execute(
-        select(Paper).where(
-            Paper.title.ilike(f"%{query}%") |
-            Paper.abstract.ilike(f"%{query}%") |
-            Paper.key_contributions.ilike(f"%{query}%")
-        ).limit(10)
+        select(Paper)
+        .where(
+            Paper.title.ilike(f"%{query}%")
+            | Paper.abstract.ilike(f"%{query}%")
+            | Paper.key_contributions.ilike(f"%{query}%")
+        )
+        .limit(10)
     )
     for p in result.scalars().all():
-        items.append({
-            "id": p.id, "name": p.key_contributions or p.title, "type": "paper",
-            "domain": p.fields_of_study or "",
-            "node_type": "paper",
-            "summary": p.summary or (p.abstract or "")[:150],
-        })
+        items.append(
+            {
+                "id": p.id,
+                "name": p.key_contributions or p.title,
+                "type": "paper",
+                "domain": p.fields_of_study or "",
+                "node_type": "paper",
+                "summary": p.summary or (p.abstract or "")[:150],
+            }
+        )
 
     return {"items": items, "total": len(items), "query": query}
 
@@ -206,6 +238,7 @@ async def _search_knowledge(db: AsyncSession, query: str) -> dict:
 # ══════════════════════════════════════════════════════════════
 #  核心对话处理
 # ══════════════════════════════════════════════════════════════
+
 
 async def process_chat(
     db: AsyncSession,
@@ -227,7 +260,9 @@ async def process_chat(
     # Step 1: LLM 意图识别 — 决定调用哪个技能
     router_messages = [
         {"role": "system", "content": ROUTER_SYSTEM_PROMPT},
-        *[{"role": m["role"], "content": m["content"]} for m in messages[-6:]],  # 保留最近 6 条上下文
+        *[
+            {"role": m["role"], "content": m["content"]} for m in messages[-6:]
+        ],  # 保留最近 6 条上下文
     ]
 
     try:
@@ -367,15 +402,17 @@ async def _execute_skill(db: AsyncSession, skill: str, params: dict) -> dict | N
         domains = await list_all_domains_with_digest(db)
         items = []
         for d in domains:
-            items.append({
-                "name": d.name,
-                "label": DOMAIN_LABELS.get(d.name, d.name),
-                "has_digest": bool(d.digest_markdown),
-                "digest_version": d.digest_version or 0,
-                "node_count": d.digest_node_count or 0,
-                "paper_count": d.digest_paper_count or 0,
-                "is_stale": d.digest_is_stale,
-            })
+            items.append(
+                {
+                    "name": d.name,
+                    "label": DOMAIN_LABELS.get(d.name, d.name),
+                    "has_digest": bool(d.digest_markdown),
+                    "digest_version": d.digest_version or 0,
+                    "node_count": d.digest_node_count or 0,
+                    "paper_count": d.digest_paper_count or 0,
+                    "is_stale": d.digest_is_stale,
+                }
+            )
         return {
             "type": "domain_list",
             "data": {"domains": items, "total": len(items)},
@@ -396,14 +433,19 @@ async def _generate_summary(
     if skill == "general_chat":
         # 通用对话直接让 LLM 回答
         chat_msgs = [
-            {"role": "system", "content": (
-                "你是 Knowledge Nexus 的 AI 助手，一个跨领域知识关联引擎。"
-                "你可以帮助用户发现知识关联、分析领域、搜索知识库。"
-                "回答简洁友好，使用 Markdown 格式。"
-            )},
+            {
+                "role": "system",
+                "content": (
+                    "你是 Knowledge Nexus 的 AI 助手，一个跨领域知识关联引擎。"
+                    "你可以帮助用户发现知识关联、分析领域、搜索知识库。"
+                    "回答简洁友好，使用 Markdown 格式。"
+                ),
+            },
             *[{"role": m["role"], "content": m["content"]} for m in messages[-6:]],
         ]
-        return await chat_completion(messages=chat_msgs, temperature=0.7, max_tokens=800)
+        return await chat_completion(
+            messages=chat_msgs, temperature=0.7, max_tokens=800
+        )
 
     if result is None:
         return f"{reply_prefix}\n\n未获得有效结果。"
@@ -415,18 +457,24 @@ async def _generate_summary(
     if data_type == "search_results":
         items = data.get("items", [])
         if not items:
-            return f"{reply_prefix}\n\n未找到与「{params.get('query', '')}」相关的知识。"
+            return (
+                f"{reply_prefix}\n\n未找到与「{params.get('query', '')}」相关的知识。"
+            )
         summary_lines = [f"{reply_prefix}\n\n找到 **{len(items)}** 条相关结果：\n"]
         for item in items[:8]:
             icon = "📄" if item.get("type") == "paper" else "💡"
-            summary_lines.append(f"- {icon} **{item['name']}** — {item.get('summary', '')[:80]}")
+            summary_lines.append(
+                f"- {icon} **{item['name']}** — {item.get('summary', '')[:80]}"
+            )
         return "\n".join(summary_lines)
 
     elif data_type == "discoveries":
         discoveries = data.get("discoveries", [])
         if not discoveries:
             return f"{reply_prefix}\n\n知识网络已经很完善，AI 未发现新的关联。"
-        summary_lines = [f"{reply_prefix}\n\n发现了 **{len(discoveries)}** 条跨域关联：\n"]
+        summary_lines = [
+            f"{reply_prefix}\n\n发现了 **{len(discoveries)}** 条跨域关联：\n"
+        ]
         for d in discoveries:
             summary_lines.append(
                 f"- **{d['source_name']}** → **{d['target_name']}** "
@@ -454,12 +502,16 @@ async def _generate_summary(
         lines = [f"{reply_prefix}\n"]
         pattern = data.get("abstract_pattern")
         if pattern:
-            lines.append(f"### 🔮 深层模式: {pattern['name']}\n{pattern['description']}\n")
+            lines.append(
+                f"### 🔮 深层模式: {pattern['name']}\n{pattern['description']}\n"
+            )
         transfers = data.get("transfer_ideas", [])
         if transfers:
             lines.append("### 🔄 知识迁移方向\n")
             for t in transfers:
-                lines.append(f"- **{t['from_domain']}** → **{t['to_domain']}**: {t['idea']} [{t['feasibility']}]")
+                lines.append(
+                    f"- **{t['from_domain']}** → **{t['to_domain']}**: {t['idea']} [{t['feasibility']}]"
+                )
         hypotheses = data.get("new_hypotheses", [])
         if hypotheses:
             lines.append("\n### 🔬 新研究假设\n")
@@ -480,8 +532,12 @@ async def _generate_summary(
         )
 
     elif data_type == "cross_domain_analysis":
-        domain_a_label = DOMAIN_LABELS.get(data.get("domain_a", ""), data.get("domain_a", ""))
-        domain_b_label = DOMAIN_LABELS.get(data.get("domain_b", ""), data.get("domain_b", ""))
+        domain_a_label = DOMAIN_LABELS.get(
+            data.get("domain_a", ""), data.get("domain_a", "")
+        )
+        domain_b_label = DOMAIN_LABELS.get(
+            data.get("domain_b", ""), data.get("domain_b", "")
+        )
         summary = data.get("summary", "")
         lines = [
             f"{reply_prefix}\n\n"
@@ -492,12 +548,16 @@ async def _generate_summary(
         if analogies:
             lines.append("\n**🪞 结构类比**:\n")
             for a in analogies:
-                lines.append(f"- **{a['concept_a']}** ≈ **{a['concept_b']}** [{a['depth']}]: {a['description']}")
+                lines.append(
+                    f"- **{a['concept_a']}** ≈ **{a['concept_b']}** [{a['depth']}]: {a['description']}"
+                )
         transfers = data.get("transfer_ideas", [])
         if transfers:
             lines.append("\n**🔄 知识迁移**:\n")
             for t in transfers:
-                lines.append(f"- {t['from_domain']} → {t['to_domain']}: {t['idea']} [{t['feasibility']}]")
+                lines.append(
+                    f"- {t['from_domain']} → {t['to_domain']}: {t['idea']} [{t['feasibility']}]"
+                )
         return "\n".join(lines)
 
     elif data_type == "domain_list":
@@ -510,7 +570,9 @@ async def _generate_summary(
                 f"{d['node_count']} 节点, {d['paper_count']} 论文"
                 f"{' (摘要已过期)' if d['is_stale'] else ''}"
             )
-        lines.append("\n💡 你可以说「生成XX领域摘要」或「分析XX和YY的跨域关联」来深入了解。")
+        lines.append(
+            "\n💡 你可以说「生成XX领域摘要」或「分析XX和YY的跨域关联」来深入了解。"
+        )
         return "\n".join(lines)
 
     return f"{reply_prefix}\n\n操作完成。"

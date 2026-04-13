@@ -49,7 +49,9 @@ class Settings(BaseSettings):
     STORAGE_PATH: Path = Path("./storage")
 
     # 爬虫配置
-    CRAWLER_SOURCE: str = "openalex"  # 数据源：openalex（默认，快速免费）或 semantic_scholar
+    CRAWLER_SOURCE: str = (
+        "openalex"  # 数据源：openalex（默认，快速免费）或 semantic_scholar
+    )
     CRAWLER_RATE_LIMIT: float = 3.5  # S2 请求间隔（秒），无 API key 建议 >=3
     CRAWLER_MAX_RETRIES: int = 3
 

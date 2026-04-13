@@ -15,8 +15,10 @@ from datetime import datetime
 
 DB_PATH = "../backend/knowledge_nexus.db"
 
+
 def get_id():
     return uuid.uuid4().hex[:12]
+
 
 now = datetime.utcnow().isoformat()
 
@@ -88,7 +90,6 @@ nodes = [
         "tags": "心理,信念,期望,主观性",
         "year": 1955,
     },
-
     # ===================== 认知科学 (cognitive_science) =====================
     {
         "name": "工作记忆 (Working Memory)",
@@ -162,7 +163,6 @@ nodes = [
         "tags": "迁移,泛化,学习,跨域",
         "year": 1901,
     },
-
     # ===================== 生命科学 (life_science) =====================
     {
         "name": "细胞信号传导 (Cell Signaling)",
@@ -243,142 +243,267 @@ nodes = [
 # ============================================================
 relations_def = [
     # === 医学 ↔ 计算机/AI ===
-    ("免疫记忆与疫苗 (Immunological Memory)", "预训练-微调范式", "ANALOGOUS_TO",
-     "疫苗'预训练'免疫系统——用无害抗原让免疫系统学习识别病原的模式，之后遇到真实病原时可快速'微调'响应。这与LLM预训练→微调范式完全同构。"),
-    
-    ("免疫记忆与疫苗 (Immunological Memory)", "免疫系统应答", "BUILDS_ON",
-     "免疫记忆是免疫系统应答的高级机制——在首次免疫应答基础上产生记忆细胞。"),
-    
-    ("药物靶点与锁钥模型 (Drug Target / Lock-and-Key)", "蛋白质折叠 (Protein Folding)", "RELATED_TO",
-     "药物设计需要知道靶点蛋白的3D结构(锁的形状)才能设计匹配的分子(钥匙)。蛋白质折叠预测直接赋能药物设计。"),
-    
-    ("流行病学 SIR 模型 (Epidemiological Modeling)", "图论与网络科学", "BUILDS_ON",
-     "流行病传播发生在社会网络上。将SIR模型与网络拓扑结合，可以更准确预测传播路径。网络科学提供了流行病学的结构基础。"),
-    
-    ("流行病学 SIR 模型 (Epidemiological Modeling)", "六度分隔与小世界网络", "RELATED_TO",
-     "小世界网络特性加速疫病传播——少数'超级传播者'(hub节点)通过短路径连接远距离个体，使传染病能在人群中快速扩散。"),
-    
-    ("临床诊断推理 (Clinical Reasoning)", "贝叶斯定理", "BUILDS_ON",
-     "临床诊断是贝叶斯推理的实践：先验概率(疾病发病率) + 检测结果(似然) → 后验概率(患病概率)。医生不断用新证据更新诊断概率。"),
-    
-    ("临床诊断推理 (Clinical Reasoning)", "思维链推理 (Chain of Thought)", "ANALOGOUS_TO",
-     "医生的诊断推理是一种思维链：症状→可能诊断→检查→排除→确诊。CoT让LLM模拟这种逐步推理过程，在医疗AI中尤为重要。"),
-    
-    ("循证医学 (Evidence-Based Medicine)", "检索增强生成 (RAG)", "ANALOGOUS_TO",
-     "循证医学核心流程：面对问题→检索最佳证据→结合临床判断→做出决策。RAG同样：面对问题→检索相关知识→结合模型推理→生成答案。两者都强调'基于证据而非记忆'。"),
-    
-    ("耐药性与军备竞赛 (Antibiotic Resistance)", "生成对抗网络 (GAN)", "ANALOGOUS_TO",
-     "耐药性是进化的军备竞赛：细菌不断进化抗药性，人类不断开发新药。GAN的对抗训练同构：生成器不断改进以骗过判别器，判别器不断提升以识别假样本。"),
-    
-    ("耐药性与军备竞赛 (Antibiotic Resistance)", "自然选择与进化", "BUILDS_ON",
-     "耐药性是自然选择的经典案例：抗生素施加选择压力，有耐药突变的细菌存活并繁殖。"),
-    
-    ("安慰剂效应 (Placebo Effect)", "RLHF (人类反馈强化学习)", "RELATED_TO",
-     "安慰剂效应揭示：人的'反馈'受主观期望强烈影响。RLHF依赖人类反馈，但人类反馈本身可能存在'安慰剂式'偏差——对某些模型风格的偏好可能与实际质量无关。"),
-    
+    (
+        "免疫记忆与疫苗 (Immunological Memory)",
+        "预训练-微调范式",
+        "ANALOGOUS_TO",
+        "疫苗'预训练'免疫系统——用无害抗原让免疫系统学习识别病原的模式，之后遇到真实病原时可快速'微调'响应。这与LLM预训练→微调范式完全同构。",
+    ),
+    (
+        "免疫记忆与疫苗 (Immunological Memory)",
+        "免疫系统应答",
+        "BUILDS_ON",
+        "免疫记忆是免疫系统应答的高级机制——在首次免疫应答基础上产生记忆细胞。",
+    ),
+    (
+        "药物靶点与锁钥模型 (Drug Target / Lock-and-Key)",
+        "蛋白质折叠 (Protein Folding)",
+        "RELATED_TO",
+        "药物设计需要知道靶点蛋白的3D结构(锁的形状)才能设计匹配的分子(钥匙)。蛋白质折叠预测直接赋能药物设计。",
+    ),
+    (
+        "流行病学 SIR 模型 (Epidemiological Modeling)",
+        "图论与网络科学",
+        "BUILDS_ON",
+        "流行病传播发生在社会网络上。将SIR模型与网络拓扑结合，可以更准确预测传播路径。网络科学提供了流行病学的结构基础。",
+    ),
+    (
+        "流行病学 SIR 模型 (Epidemiological Modeling)",
+        "六度分隔与小世界网络",
+        "RELATED_TO",
+        "小世界网络特性加速疫病传播——少数'超级传播者'(hub节点)通过短路径连接远距离个体，使传染病能在人群中快速扩散。",
+    ),
+    (
+        "临床诊断推理 (Clinical Reasoning)",
+        "贝叶斯定理",
+        "BUILDS_ON",
+        "临床诊断是贝叶斯推理的实践：先验概率(疾病发病率) + 检测结果(似然) → 后验概率(患病概率)。医生不断用新证据更新诊断概率。",
+    ),
+    (
+        "临床诊断推理 (Clinical Reasoning)",
+        "思维链推理 (Chain of Thought)",
+        "ANALOGOUS_TO",
+        "医生的诊断推理是一种思维链：症状→可能诊断→检查→排除→确诊。CoT让LLM模拟这种逐步推理过程，在医疗AI中尤为重要。",
+    ),
+    (
+        "循证医学 (Evidence-Based Medicine)",
+        "检索增强生成 (RAG)",
+        "ANALOGOUS_TO",
+        "循证医学核心流程：面对问题→检索最佳证据→结合临床判断→做出决策。RAG同样：面对问题→检索相关知识→结合模型推理→生成答案。两者都强调'基于证据而非记忆'。",
+    ),
+    (
+        "耐药性与军备竞赛 (Antibiotic Resistance)",
+        "生成对抗网络 (GAN)",
+        "ANALOGOUS_TO",
+        "耐药性是进化的军备竞赛：细菌不断进化抗药性，人类不断开发新药。GAN的对抗训练同构：生成器不断改进以骗过判别器，判别器不断提升以识别假样本。",
+    ),
+    (
+        "耐药性与军备竞赛 (Antibiotic Resistance)",
+        "自然选择与进化",
+        "BUILDS_ON",
+        "耐药性是自然选择的经典案例：抗生素施加选择压力，有耐药突变的细菌存活并繁殖。",
+    ),
+    (
+        "安慰剂效应 (Placebo Effect)",
+        "RLHF (人类反馈强化学习)",
+        "RELATED_TO",
+        "安慰剂效应揭示：人的'反馈'受主观期望强烈影响。RLHF依赖人类反馈，但人类反馈本身可能存在'安慰剂式'偏差——对某些模型风格的偏好可能与实际质量无关。",
+    ),
     # === 认知科学 ↔ 计算机/AI ===
-    ("工作记忆 (Working Memory)", "Transformer 架构", "ANALOGOUS_TO",
-     "工作记忆容量有限(~7项)。Transformer的context window就是AI的'工作记忆'——有限的上下文长度决定了模型能同时处理的信息量。超长上下文研究就是在扩展AI的'工作记忆'。"),
-    
-    ("选择性注意 (Selective Attention)", "注意力机制", "INSPIRES",
-     "计算注意力机制直接受认知科学启发：大脑选择性关注最相关的信息，Attention机制同样让模型为不同输入分配不同权重，聚焦最重要的部分。"),
-    
-    ("双系统理论 (Dual Process Theory)", "思维链推理 (Chain of Thought)", "ANALOGOUS_TO",
-     "系统1(快速直觉)→系统2(慢速推理)。LLM的直接输出类似系统1(快但可能错)，CoT强制模型进入'系统2模式'——逐步推理虽慢但更准确。"),
-    
-    ("双系统理论 (Dual Process Theory)", "大语言模型 (LLM)", "ANALOGOUS_TO",
-     "LLM兼具两种模式：简单问题直接输出(系统1)，复杂问题需要CoT/多步推理(系统2)。这种双系统特征是LLM认知能力的核心结构。"),
-    
-    ("具身认知 (Embodied Cognition)", "多模态学习 (Multimodal Learning)", "ANALOGOUS_TO",
-     "具身认知认为理解需要感知-运动经验，不能仅靠符号。多模态AI同样：仅有文本不够，还需要图像、声音、视频等多种'感知通道'才能更深地理解世界。"),
-    
-    ("具身认知 (Embodied Cognition)", "AI Agent (智能体)", "INSPIRES",
-     "具身认知强调认知依赖身体-环境交互。具身AI Agent不仅思考还要在环境中行动——通过感知-行动循环(而非纯符号推理)获得理解。"),
-    
-    ("图式理论 (Schema Theory)", "预训练-微调范式", "ANALOGOUS_TO",
-     "图式是认知的'预训练模型'——已有的知识框架。新信息被同化(融入已有图式)≈微调不改变权重；图式顺应(修改图式)≈微调更新参数。学习就是不断更新内部图式。"),
-    
-    ("元认知 (Metacognition)", "思维链推理 (Chain of Thought)", "RELATED_TO",
-     "元认知是'思考关于思考'。CoT让模型显式展示思考过程，是一种元认知的外化——让AI'意识到'自己在如何推理，从而能监控和修正推理过程。"),
-    
-    ("元认知 (Metacognition)", "RLHF (人类反馈强化学习)", "RELATED_TO",
-     "元认知包含自我评估和自我调节。RLHF训练模型学会评估自己输出的质量并调整——是一种'训练元认知'的技术手段。"),
-    
-    ("迁移理论 (Transfer of Learning)", "迁移学习", "INSPIRES",
-     "认知科学的迁移理论直接启发了机器学习中的迁移学习：将一个任务/领域学到的知识应用到新任务/领域。近迁移↔领域内迁移，远迁移↔跨域迁移。"),
-    
-    ("认知负荷理论 (Cognitive Load Theory)", "量化与模型压缩", "ANALOGOUS_TO",
-     "认知负荷理论关注如何在有限认知资源下优化信息处理。模型压缩同样关注如何在有限计算资源下保持模型能力——减少'认知负荷'同时保持'理解能力'。"),
-    
+    (
+        "工作记忆 (Working Memory)",
+        "Transformer 架构",
+        "ANALOGOUS_TO",
+        "工作记忆容量有限(~7项)。Transformer的context window就是AI的'工作记忆'——有限的上下文长度决定了模型能同时处理的信息量。超长上下文研究就是在扩展AI的'工作记忆'。",
+    ),
+    (
+        "选择性注意 (Selective Attention)",
+        "注意力机制",
+        "INSPIRES",
+        "计算注意力机制直接受认知科学启发：大脑选择性关注最相关的信息，Attention机制同样让模型为不同输入分配不同权重，聚焦最重要的部分。",
+    ),
+    (
+        "双系统理论 (Dual Process Theory)",
+        "思维链推理 (Chain of Thought)",
+        "ANALOGOUS_TO",
+        "系统1(快速直觉)→系统2(慢速推理)。LLM的直接输出类似系统1(快但可能错)，CoT强制模型进入'系统2模式'——逐步推理虽慢但更准确。",
+    ),
+    (
+        "双系统理论 (Dual Process Theory)",
+        "大语言模型 (LLM)",
+        "ANALOGOUS_TO",
+        "LLM兼具两种模式：简单问题直接输出(系统1)，复杂问题需要CoT/多步推理(系统2)。这种双系统特征是LLM认知能力的核心结构。",
+    ),
+    (
+        "具身认知 (Embodied Cognition)",
+        "多模态学习 (Multimodal Learning)",
+        "ANALOGOUS_TO",
+        "具身认知认为理解需要感知-运动经验，不能仅靠符号。多模态AI同样：仅有文本不够，还需要图像、声音、视频等多种'感知通道'才能更深地理解世界。",
+    ),
+    (
+        "具身认知 (Embodied Cognition)",
+        "AI Agent (智能体)",
+        "INSPIRES",
+        "具身认知强调认知依赖身体-环境交互。具身AI Agent不仅思考还要在环境中行动——通过感知-行动循环(而非纯符号推理)获得理解。",
+    ),
+    (
+        "图式理论 (Schema Theory)",
+        "预训练-微调范式",
+        "ANALOGOUS_TO",
+        "图式是认知的'预训练模型'——已有的知识框架。新信息被同化(融入已有图式)≈微调不改变权重；图式顺应(修改图式)≈微调更新参数。学习就是不断更新内部图式。",
+    ),
+    (
+        "元认知 (Metacognition)",
+        "思维链推理 (Chain of Thought)",
+        "RELATED_TO",
+        "元认知是'思考关于思考'。CoT让模型显式展示思考过程，是一种元认知的外化——让AI'意识到'自己在如何推理，从而能监控和修正推理过程。",
+    ),
+    (
+        "元认知 (Metacognition)",
+        "RLHF (人类反馈强化学习)",
+        "RELATED_TO",
+        "元认知包含自我评估和自我调节。RLHF训练模型学会评估自己输出的质量并调整——是一种'训练元认知'的技术手段。",
+    ),
+    (
+        "迁移理论 (Transfer of Learning)",
+        "迁移学习",
+        "INSPIRES",
+        "认知科学的迁移理论直接启发了机器学习中的迁移学习：将一个任务/领域学到的知识应用到新任务/领域。近迁移↔领域内迁移，远迁移↔跨域迁移。",
+    ),
+    (
+        "认知负荷理论 (Cognitive Load Theory)",
+        "量化与模型压缩",
+        "ANALOGOUS_TO",
+        "认知负荷理论关注如何在有限认知资源下优化信息处理。模型压缩同样关注如何在有限计算资源下保持模型能力——减少'认知负荷'同时保持'理解能力'。",
+    ),
     # === 生命科学 ↔ 计算机/AI ===
-    ("细胞信号传导 (Cell Signaling)", "人工神经网络", "ANALOGOUS_TO",
-     "细胞通过信号级联传递和放大信息。人工神经网络同样通过层层传递和变换信号——每一层接收输入、处理、传递给下一层。生物信号传导是神经网络的分子层面原型。"),
-    
-    ("基因调控网络 (Gene Regulatory Network)", "知识图谱 (Knowledge Graph)", "ANALOGOUS_TO",
-     "基因调控网络是生物学的'知识图谱'——基因(节点)通过调控关系(边)相互连接，形成复杂的有向图。理解基因网络就是在做生物学的图谱分析。"),
-    
-    ("基因调控网络 (Gene Regulatory Network)", "图神经网络 (GNN)", "RELATED_TO",
-     "基因调控网络的分析和预测是GNN的重要应用场景。GNN能捕获基因间的复杂调控关系，预测基因表达模式。"),
-    
-    ("蛋白质折叠 (Protein Folding)", "深度学习", "RELATED_TO",
-     "AlphaFold2用深度学习解决了蛋白质折叠问题——50年来最重要的生物学突破之一。证明了AI能在传统科学难题上取得革命性突破。"),
-    
-    ("蛋白质折叠 (Protein Folding)", "自注意力机制 (Self-Attention)", "RELATED_TO",
-     "AlphaFold2的核心创新之一是将Self-Attention应用于氨基酸序列，建模远距离残基间的相互作用。Attention机制完美适配蛋白质中的长距离依赖关系。"),
-    
-    ("表观遗传学 (Epigenetics)", "预训练-微调范式", "ANALOGOUS_TO",
-     "表观遗传 = '不改DNA序列但改变基因表达'。微调 = '不改大部分预训练权重但改变模型行为'。两者都是在不修改底层'代码'的情况下，通过上层'配置'改变系统行为。"),
-    
-    ("表观遗传学 (Epigenetics)", "提示工程 (Prompt Engineering)", "ANALOGOUS_TO",
-     "表观遗传通过甲基化等修饰影响基因表达而不改变DNA。Prompt Engineering通过改变输入文本影响LLM输出而不改变模型权重——两者都是不改'硬件'改'环境指令'。"),
-    
-    ("共生与协同进化 (Symbiosis and Co-evolution)", "联邦学习 (Federated Learning)", "ANALOGOUS_TO",
-     "共生中不同物种各自保留独立性但共享利益。联邦学习中不同机构保留数据主权但共享模型知识——两者都是'独立而协作'的互利模式。"),
-    
-    ("共生与协同进化 (Symbiosis and Co-evolution)", "多Agent系统 (Multi-Agent)", "ANALOGOUS_TO",
-     "共生关系中不同物种各有特长、互补协作。多Agent系统同样：不同Agent各有专长，通过协作完成单个Agent无法完成的任务。"),
-    
-    ("趋化性 (Chemotaxis)", "梯度下降法", "ANALOGOUS_TO",
-     "趋化性是生物版的梯度下降：细菌沿化学浓度梯度移动，向'更优'方向迁移。梯度下降沿损失函数梯度方向更新参数——两者都是'顺着梯度走'的优化策略。"),
-    
-    ("趋化性 (Chemotaxis)", "梯度下降与优化器", "ANALOGOUS_TO",
-     "细菌趋化性使用'随机游走+偏向'策略(run-and-tumble)：随机探索但偏向浓度增加方向。SGD(随机梯度下降)同样：随机采样但期望方向指向最优。"),
-    
-    ("干细胞分化 (Stem Cell Differentiation)", "预训练-微调范式", "ANALOGOUS_TO",
-     "干细胞从全能到特化。预训练模型从通用到专用。两者都经历：广泛潜能→接收特定'信号'(领域数据/微调)→特化为特定功能(组织细胞/领域模型)。"),
-    
-    ("生物钟与昼夜节律 (Circadian Rhythm)", "批量归一化 (Batch Normalization)", "ANALOGOUS_TO",
-     "生物钟通过反馈环路维持稳定的24小时节律，防止代谢过程偏离正常范围。BatchNorm同样通过归一化维持激活值在稳定范围内，防止训练过程中的数值漂移。"),
-    
+    (
+        "细胞信号传导 (Cell Signaling)",
+        "人工神经网络",
+        "ANALOGOUS_TO",
+        "细胞通过信号级联传递和放大信息。人工神经网络同样通过层层传递和变换信号——每一层接收输入、处理、传递给下一层。生物信号传导是神经网络的分子层面原型。",
+    ),
+    (
+        "基因调控网络 (Gene Regulatory Network)",
+        "知识图谱 (Knowledge Graph)",
+        "ANALOGOUS_TO",
+        "基因调控网络是生物学的'知识图谱'——基因(节点)通过调控关系(边)相互连接，形成复杂的有向图。理解基因网络就是在做生物学的图谱分析。",
+    ),
+    (
+        "基因调控网络 (Gene Regulatory Network)",
+        "图神经网络 (GNN)",
+        "RELATED_TO",
+        "基因调控网络的分析和预测是GNN的重要应用场景。GNN能捕获基因间的复杂调控关系，预测基因表达模式。",
+    ),
+    (
+        "蛋白质折叠 (Protein Folding)",
+        "深度学习",
+        "RELATED_TO",
+        "AlphaFold2用深度学习解决了蛋白质折叠问题——50年来最重要的生物学突破之一。证明了AI能在传统科学难题上取得革命性突破。",
+    ),
+    (
+        "蛋白质折叠 (Protein Folding)",
+        "自注意力机制 (Self-Attention)",
+        "RELATED_TO",
+        "AlphaFold2的核心创新之一是将Self-Attention应用于氨基酸序列，建模远距离残基间的相互作用。Attention机制完美适配蛋白质中的长距离依赖关系。",
+    ),
+    (
+        "表观遗传学 (Epigenetics)",
+        "预训练-微调范式",
+        "ANALOGOUS_TO",
+        "表观遗传 = '不改DNA序列但改变基因表达'。微调 = '不改大部分预训练权重但改变模型行为'。两者都是在不修改底层'代码'的情况下，通过上层'配置'改变系统行为。",
+    ),
+    (
+        "表观遗传学 (Epigenetics)",
+        "提示工程 (Prompt Engineering)",
+        "ANALOGOUS_TO",
+        "表观遗传通过甲基化等修饰影响基因表达而不改变DNA。Prompt Engineering通过改变输入文本影响LLM输出而不改变模型权重——两者都是不改'硬件'改'环境指令'。",
+    ),
+    (
+        "共生与协同进化 (Symbiosis and Co-evolution)",
+        "联邦学习 (Federated Learning)",
+        "ANALOGOUS_TO",
+        "共生中不同物种各自保留独立性但共享利益。联邦学习中不同机构保留数据主权但共享模型知识——两者都是'独立而协作'的互利模式。",
+    ),
+    (
+        "共生与协同进化 (Symbiosis and Co-evolution)",
+        "多Agent系统 (Multi-Agent)",
+        "ANALOGOUS_TO",
+        "共生关系中不同物种各有特长、互补协作。多Agent系统同样：不同Agent各有专长，通过协作完成单个Agent无法完成的任务。",
+    ),
+    (
+        "趋化性 (Chemotaxis)",
+        "梯度下降法",
+        "ANALOGOUS_TO",
+        "趋化性是生物版的梯度下降：细菌沿化学浓度梯度移动，向'更优'方向迁移。梯度下降沿损失函数梯度方向更新参数——两者都是'顺着梯度走'的优化策略。",
+    ),
+    (
+        "趋化性 (Chemotaxis)",
+        "梯度下降与优化器",
+        "ANALOGOUS_TO",
+        "细菌趋化性使用'随机游走+偏向'策略(run-and-tumble)：随机探索但偏向浓度增加方向。SGD(随机梯度下降)同样：随机采样但期望方向指向最优。",
+    ),
+    (
+        "干细胞分化 (Stem Cell Differentiation)",
+        "预训练-微调范式",
+        "ANALOGOUS_TO",
+        "干细胞从全能到特化。预训练模型从通用到专用。两者都经历：广泛潜能→接收特定'信号'(领域数据/微调)→特化为特定功能(组织细胞/领域模型)。",
+    ),
+    (
+        "生物钟与昼夜节律 (Circadian Rhythm)",
+        "批量归一化 (Batch Normalization)",
+        "ANALOGOUS_TO",
+        "生物钟通过反馈环路维持稳定的24小时节律，防止代谢过程偏离正常范围。BatchNorm同样通过归一化维持激活值在稳定范围内，防止训练过程中的数值漂移。",
+    ),
     # === 领域间关系 ===
-    ("临床诊断推理 (Clinical Reasoning)", "循证医学 (Evidence-Based Medicine)", "BUILDS_ON",
-     "循证医学为临床诊断推理提供了系统性的证据检索和评估框架——从经验驱动走向数据驱动。"),
-    
-    ("工作记忆 (Working Memory)", "选择性注意 (Selective Attention)", "RELATED_TO",
-     "工作记忆和选择性注意紧密关联：注意力决定什么信息进入工作记忆，工作记忆容量限制决定注意力需要高度选择性。"),
-    
-    ("认知负荷理论 (Cognitive Load Theory)", "工作记忆 (Working Memory)", "BUILDS_ON",
-     "认知负荷理论直接建立在工作记忆容量有限的基础上——正因为工作记忆有限，才需要管理认知负荷。"),
-    
-    ("图式理论 (Schema Theory)", "迁移理论 (Transfer of Learning)", "ENABLES",
-     "迁移学习的认知基础是图式：抽象的知识图式可以跨情境应用，具体知识难以迁移。图式越抽象，迁移越容易。"),
-    
-    ("选择性注意 (Selective Attention)", "巴甫洛夫条件反射", "RELATED_TO",
-     "注意力可以被条件化——经过训练，特定刺激会自动吸引注意力。巴甫洛夫条件反射建立了刺激-反应的自动化联结，注意力也可以被类似地'条件化'。"),
-    
-    ("具身认知 (Embodied Cognition)", "现象学 (Phenomenology)", "BUILDS_ON",
-     "具身认知哲学根源于现象学——梅洛-庞蒂的身体现象学强调知觉的身体性，为具身认知提供了哲学基础。"),
+    (
+        "临床诊断推理 (Clinical Reasoning)",
+        "循证医学 (Evidence-Based Medicine)",
+        "BUILDS_ON",
+        "循证医学为临床诊断推理提供了系统性的证据检索和评估框架——从经验驱动走向数据驱动。",
+    ),
+    (
+        "工作记忆 (Working Memory)",
+        "选择性注意 (Selective Attention)",
+        "RELATED_TO",
+        "工作记忆和选择性注意紧密关联：注意力决定什么信息进入工作记忆，工作记忆容量限制决定注意力需要高度选择性。",
+    ),
+    (
+        "认知负荷理论 (Cognitive Load Theory)",
+        "工作记忆 (Working Memory)",
+        "BUILDS_ON",
+        "认知负荷理论直接建立在工作记忆容量有限的基础上——正因为工作记忆有限，才需要管理认知负荷。",
+    ),
+    (
+        "图式理论 (Schema Theory)",
+        "迁移理论 (Transfer of Learning)",
+        "ENABLES",
+        "迁移学习的认知基础是图式：抽象的知识图式可以跨情境应用，具体知识难以迁移。图式越抽象，迁移越容易。",
+    ),
+    (
+        "选择性注意 (Selective Attention)",
+        "巴甫洛夫条件反射",
+        "RELATED_TO",
+        "注意力可以被条件化——经过训练，特定刺激会自动吸引注意力。巴甫洛夫条件反射建立了刺激-反应的自动化联结，注意力也可以被类似地'条件化'。",
+    ),
+    (
+        "具身认知 (Embodied Cognition)",
+        "现象学 (Phenomenology)",
+        "BUILDS_ON",
+        "具身认知哲学根源于现象学——梅洛-庞蒂的身体现象学强调知觉的身体性，为具身认知提供了哲学基础。",
+    ),
 ]
+
 
 def main():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
+
     # 1. 插入知识节点
     node_name_to_id = {}
     inserted_nodes = 0
     skipped_nodes = 0
-    
+
     for node in nodes:
         cursor.execute("SELECT id FROM knowledge_nodes WHERE name = ?", (node["name"],))
         existing = cursor.fetchone()
@@ -387,37 +512,48 @@ def main():
             skipped_nodes += 1
             print(f"  ⏩ 已存在: {node['name']}")
             continue
-        
+
         nid = get_id()
         node_name_to_id[node["name"]] = nid
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO knowledge_nodes 
             (id, name, node_type, domain, description, summary, source_info, year, tags, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            nid, node["name"], node["node_type"], node["domain"],
-            node["description"], node["summary"], None, node.get("year"),
-            node.get("tags"), now, now
-        ))
+        """,
+            (
+                nid,
+                node["name"],
+                node["node_type"],
+                node["domain"],
+                node["description"],
+                node["summary"],
+                None,
+                node.get("year"),
+                node.get("tags"),
+                now,
+                now,
+            ),
+        )
         inserted_nodes += 1
         print(f"  ✅ 新增节点: {node['name']} [{node['node_type']}|{node['domain']}]")
-    
+
     print(f"\n📊 节点: 新增 {inserted_nodes}, 跳过 {skipped_nodes}")
-    
+
     # 2. 构建全库名称→ID映射
     cursor.execute("SELECT id, name FROM knowledge_nodes")
     for row in cursor.fetchall():
         node_name_to_id[row[1]] = row[0]
-    
+
     # 3. 插入关系
     inserted_rels = 0
     skipped_rels = 0
     failed_rels = 0
-    
+
     for src_name, tgt_name, rel_type, desc in relations_def:
         src_id = node_name_to_id.get(src_name)
         tgt_id = node_name_to_id.get(tgt_name)
-        
+
         if not src_id or not tgt_id:
             failed_rels += 1
             missing = []
@@ -427,32 +563,46 @@ def main():
                 missing.append(f"目标'{tgt_name}'")
             print(f"  ❌ 找不到节点: {', '.join(missing)}")
             continue
-        
-        cursor.execute("""
+
+        cursor.execute(
+            """
             SELECT id FROM relations 
             WHERE source_id = ? AND target_id = ? AND relation_type = ?
-        """, (src_id, tgt_id, rel_type))
+        """,
+            (src_id, tgt_id, rel_type),
+        )
         if cursor.fetchone():
             skipped_rels += 1
             print(f"  ⏩ 关系已存在: {src_name} --{rel_type}--> {tgt_name}")
             continue
-        
+
         rid = get_id()
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO relations 
             (id, source_id, target_id, relation_type, source_type, target_type, 
              description, confidence, ai_generated, status, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            rid, src_id, tgt_id, rel_type,
-            "knowledge_node", "knowledge_node",
-            desc, 1.0, False, "confirmed", now
-        ))
+        """,
+            (
+                rid,
+                src_id,
+                tgt_id,
+                rel_type,
+                "knowledge_node",
+                "knowledge_node",
+                desc,
+                1.0,
+                False,
+                "confirmed",
+                now,
+            ),
+        )
         inserted_rels += 1
         print(f"  ✅ {src_name} --{rel_type}--> {tgt_name}")
-    
+
     conn.commit()
-    
+
     # 统计
     cursor.execute("SELECT COUNT(*) FROM knowledge_nodes")
     total_nodes = cursor.fetchone()[0]
@@ -460,12 +610,13 @@ def main():
     total_rels = cursor.fetchone()[0]
     cursor.execute("SELECT DISTINCT domain FROM knowledge_nodes")
     domains = [r[0] for r in cursor.fetchall()]
-    
+
     print(f"\n📊 关系: 新增 {inserted_rels}, 跳过 {skipped_rels}, 失败 {failed_rels}")
     print(f"\n🎉 数据库总计: {total_nodes} 节点, {total_rels} 关系")
     print(f"📌 所有领域({len(domains)}): {', '.join(sorted(domains))}")
-    
+
     conn.close()
+
 
 if __name__ == "__main__":
     print("=" * 60)

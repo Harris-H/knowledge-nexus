@@ -47,7 +47,9 @@ class Paper(Base):
     impact_score: Mapped[float] = mapped_column(Float, default=0.0)
     key_contributions: Mapped[str | None] = mapped_column(Text)  # 短名称
     summary: Mapped[str | None] = mapped_column(String(500))  # 一句话简介
-    fields_of_study: Mapped[str | None] = mapped_column(String(500))  # 所属领域（逗号分隔）
+    fields_of_study: Mapped[str | None] = mapped_column(
+        String(500)
+    )  # 所属领域（逗号分隔）
     ai_status: Mapped[str] = mapped_column(String(20), default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
@@ -103,6 +105,7 @@ class Domain(Base):
 
 class Concept(Base):
     """保留旧表兼容"""
+
     __tablename__ = "concepts"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=gen_id)
@@ -117,6 +120,7 @@ class KnowledgeNode(Base):
     通用知识节点：现象、定理、规律、方法、原理、概念等。
     与 Paper 通过 Relation 表建立跨域关联。
     """
+
     __tablename__ = "knowledge_nodes"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=gen_id)
@@ -143,23 +147,31 @@ class KnowledgeNode(Base):
 
 class Relation(Base):
     """论文/概念间的关联（同时存入 Neo4j 图谱）"""
+
     __tablename__ = "relations"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=gen_id)
     source_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
-    source_type: Mapped[str] = mapped_column(String(20), nullable=False)  # paper / concept
+    source_type: Mapped[str] = mapped_column(
+        String(20), nullable=False
+    )  # paper / concept
     target_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     target_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    relation_type: Mapped[str] = mapped_column(String(50), nullable=False)  # CITES, IMPROVES, ANALOGOUS_TO...
+    relation_type: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # CITES, IMPROVES, ANALOGOUS_TO...
     description: Mapped[str | None] = mapped_column(Text)
     confidence: Mapped[float] = mapped_column(Float, default=1.0)
     ai_generated: Mapped[bool] = mapped_column(default=False)
-    status: Mapped[str] = mapped_column(String(20), default="confirmed")  # confirmed / pending / rejected
+    status: Mapped[str] = mapped_column(
+        String(20), default="confirmed"
+    )  # confirmed / pending / rejected
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class CrawlTask(Base):
     """爬取任务记录"""
+
     __tablename__ = "crawl_tasks"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=gen_id)

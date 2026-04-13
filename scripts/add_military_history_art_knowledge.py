@@ -15,8 +15,10 @@ from datetime import datetime
 
 DB_PATH = "../backend/knowledge_nexus.db"
 
+
 def get_id():
     return uuid.uuid4().hex[:12]
+
 
 now = datetime.utcnow().isoformat()
 
@@ -106,7 +108,6 @@ nodes = [
         "tags": "拿破仑,战术,资源分配,专注",
         "year": 1805,
     },
-
     # ===================== 历史学 (history) =====================
     {
         "name": "历史周期律 (Dynastic Cycle)",
@@ -171,7 +172,6 @@ nodes = [
         "tags": "幂律,分布,互联网,齐普夫",
         "year": 2004,
     },
-
     # ===================== 艺术 (art) =====================
     {
         "name": "黄金比例 (Golden Ratio)",
@@ -243,146 +243,271 @@ nodes = [
 # ============================================================
 relations_def = [
     # === 军事 ↔ 计算机/AI ===
-    ("知彼知己 (Know Your Enemy and Yourself)", "强化学习", "ANALOGOUS_TO",
-     "'知彼'需要环境建模(world model)，'知己'需要策略评估(policy evaluation)。完全'知彼知己'对应完全信息博弈中的最优策略。强化学习就是在不断'知彼知己'的过程中学习。"),
-    
-    ("兵者诡道 (War is Deception)", "生成对抗网络 (GAN)", "ANALOGOUS_TO",
-     "兵者诡道——通过欺骗获取优势。GAN中生成器试图'欺骗'判别器，制造以假乱真的数据。对抗训练本质上就是'诡道'的数学化——攻防双方在欺骗与识别中共同进化。"),
-    
-    ("兵者诡道 (War is Deception)", "对比学习 (Contrastive Learning)", "RELATED_TO",
-     "对抗中需要识别真假信息。对比学习训练模型区分'真样本'和'假样本'，正是反欺骗能力的技术体现——让模型学会在噪声和干扰中辨别真伪。"),
-    
-    ("战争迷雾 (Fog of War)", "检索增强生成 (RAG)", "ANALOGOUS_TO",
-     "战争迷雾——决策者面对不完整信息。RAG承认LLM内部知识不完整，通过主动检索外部信息来'拨开迷雾'，获取做出更好决策所需的信息。"),
-    
-    ("OODA 循环 (Observe-Orient-Decide-Act)", "ReAct 框架", "ANALOGOUS_TO",
-     "OODA(观察→判断→决策→行动)与ReAct(Reasoning→Acting→Observing)高度同构：都是感知-思考-行动的闭环决策循环。ReAct就是AI Agent版本的OODA循环。"),
-    
-    ("OODA 循环 (Observe-Orient-Decide-Act)", "AI Agent (智能体)", "INSPIRES",
-     "OODA循环是Agent架构的思想源头：Agent的感知(Observe)→推理(Orient/Decide)→工具调用(Act)→观察结果(Observe)循环正是OODA在AI中的实现。"),
-    
-    ("不战而屈人之兵 (Win Without Fighting)", "知识蒸馏 (Knowledge Distillation)", "ANALOGOUS_TO",
-     "'不战而胜'——用最小代价达到目标。知识蒸馏让小模型直接'继承'大模型的能力，不需要重新训练(不战)就获得了强大性能(屈人之兵)。"),
-    
-    ("集中优势兵力 (Principle of Concentration)", "混合专家模型 (MoE)", "ANALOGOUS_TO",
-     "集中优势兵力在关键战场。MoE的核心思想类似：不是所有专家同时工作，而是根据输入(战场)激活最相关的专家(精锐部队)，将计算资源集中在最需要的地方。"),
-    
-    ("博弈对抗与零和博弈 (Adversarial Game Theory)", "纳什均衡", "BUILDS_ON",
-     "军事对抗博弈直接建立在纳什均衡理论上：在零和博弈中，纳什均衡就是minimax策略，双方都选择使自己最坏情况最好的策略。"),
-    
-    ("博弈对抗与零和博弈 (Adversarial Game Theory)", "RLHF (人类反馈强化学习)", "RELATED_TO",
-     "对抗博弈思维在RLHF中体现为：用red-teaming(红队对抗)测试模型的安全边界，在攻击与防御的博弈中提升模型鲁棒性。"),
-    
-    ("兰切斯特方程 (Lanchester's Laws)", "Scaling Law (规模定律)", "ANALOGOUS_TO",
-     "兰切斯特平方律：战斗力∝兵力²。LLM的Scaling Law：模型能力按参数量的幂律增长。两者都揭示了'规模效应'的数学本质——量变引发质变的精确描述。"),
-    
+    (
+        "知彼知己 (Know Your Enemy and Yourself)",
+        "强化学习",
+        "ANALOGOUS_TO",
+        "'知彼'需要环境建模(world model)，'知己'需要策略评估(policy evaluation)。完全'知彼知己'对应完全信息博弈中的最优策略。强化学习就是在不断'知彼知己'的过程中学习。",
+    ),
+    (
+        "兵者诡道 (War is Deception)",
+        "生成对抗网络 (GAN)",
+        "ANALOGOUS_TO",
+        "兵者诡道——通过欺骗获取优势。GAN中生成器试图'欺骗'判别器，制造以假乱真的数据。对抗训练本质上就是'诡道'的数学化——攻防双方在欺骗与识别中共同进化。",
+    ),
+    (
+        "兵者诡道 (War is Deception)",
+        "对比学习 (Contrastive Learning)",
+        "RELATED_TO",
+        "对抗中需要识别真假信息。对比学习训练模型区分'真样本'和'假样本'，正是反欺骗能力的技术体现——让模型学会在噪声和干扰中辨别真伪。",
+    ),
+    (
+        "战争迷雾 (Fog of War)",
+        "检索增强生成 (RAG)",
+        "ANALOGOUS_TO",
+        "战争迷雾——决策者面对不完整信息。RAG承认LLM内部知识不完整，通过主动检索外部信息来'拨开迷雾'，获取做出更好决策所需的信息。",
+    ),
+    (
+        "OODA 循环 (Observe-Orient-Decide-Act)",
+        "ReAct 框架",
+        "ANALOGOUS_TO",
+        "OODA(观察→判断→决策→行动)与ReAct(Reasoning→Acting→Observing)高度同构：都是感知-思考-行动的闭环决策循环。ReAct就是AI Agent版本的OODA循环。",
+    ),
+    (
+        "OODA 循环 (Observe-Orient-Decide-Act)",
+        "AI Agent (智能体)",
+        "INSPIRES",
+        "OODA循环是Agent架构的思想源头：Agent的感知(Observe)→推理(Orient/Decide)→工具调用(Act)→观察结果(Observe)循环正是OODA在AI中的实现。",
+    ),
+    (
+        "不战而屈人之兵 (Win Without Fighting)",
+        "知识蒸馏 (Knowledge Distillation)",
+        "ANALOGOUS_TO",
+        "'不战而胜'——用最小代价达到目标。知识蒸馏让小模型直接'继承'大模型的能力，不需要重新训练(不战)就获得了强大性能(屈人之兵)。",
+    ),
+    (
+        "集中优势兵力 (Principle of Concentration)",
+        "混合专家模型 (MoE)",
+        "ANALOGOUS_TO",
+        "集中优势兵力在关键战场。MoE的核心思想类似：不是所有专家同时工作，而是根据输入(战场)激活最相关的专家(精锐部队)，将计算资源集中在最需要的地方。",
+    ),
+    (
+        "博弈对抗与零和博弈 (Adversarial Game Theory)",
+        "纳什均衡",
+        "BUILDS_ON",
+        "军事对抗博弈直接建立在纳什均衡理论上：在零和博弈中，纳什均衡就是minimax策略，双方都选择使自己最坏情况最好的策略。",
+    ),
+    (
+        "博弈对抗与零和博弈 (Adversarial Game Theory)",
+        "RLHF (人类反馈强化学习)",
+        "RELATED_TO",
+        "对抗博弈思维在RLHF中体现为：用red-teaming(红队对抗)测试模型的安全边界，在攻击与防御的博弈中提升模型鲁棒性。",
+    ),
+    (
+        "兰切斯特方程 (Lanchester's Laws)",
+        "Scaling Law (规模定律)",
+        "ANALOGOUS_TO",
+        "兰切斯特平方律：战斗力∝兵力²。LLM的Scaling Law：模型能力按参数量的幂律增长。两者都揭示了'规模效应'的数学本质——量变引发质变的精确描述。",
+    ),
     # === 军事内部关系 ===
-    ("孙子兵法 (The Art of War)", "知彼知己 (Know Your Enemy and Yourself)", "ENABLES",
-     "'知彼知己'是孙子兵法的核心命题之一。"),
-    
-    ("孙子兵法 (The Art of War)", "兵者诡道 (War is Deception)", "ENABLES",
-     "'兵者，诡道也'出自《孙子兵法·始计篇》。"),
-    
-    ("孙子兵法 (The Art of War)", "不战而屈人之兵 (Win Without Fighting)", "ENABLES",
-     "'不战而屈人之兵，善之善者也'出自《孙子兵法·谋攻篇》。"),
-    
+    (
+        "孙子兵法 (The Art of War)",
+        "知彼知己 (Know Your Enemy and Yourself)",
+        "ENABLES",
+        "'知彼知己'是孙子兵法的核心命题之一。",
+    ),
+    (
+        "孙子兵法 (The Art of War)",
+        "兵者诡道 (War is Deception)",
+        "ENABLES",
+        "'兵者，诡道也'出自《孙子兵法·始计篇》。",
+    ),
+    (
+        "孙子兵法 (The Art of War)",
+        "不战而屈人之兵 (Win Without Fighting)",
+        "ENABLES",
+        "'不战而屈人之兵，善之善者也'出自《孙子兵法·谋攻篇》。",
+    ),
     # === 历史 ↔ 计算机/AI ===
-    ("历史周期律 (Dynastic Cycle)", "梯度下降与优化器", "ANALOGOUS_TO",
-     "历史周期律的兴→衰→新生循环类似优化过程中的学习率调度：warm-up(兴起)→训练(繁荣)→学习率衰减(衰落)→重新warm-up(新周期)。Cosine annealing就是一种'周期律'。"),
-    
-    ("技术革命与范式转换 (Technological Revolutions)", "Scaling Law (规模定律)", "RELATED_TO",
-     "每次技术革命都是一个范式转换——从蒸汽机到电力到计算机。LLM的涌现能力也是一种范式转换：当规模突破阈值，系统能力发生质变，类似技术革命的突变点。"),
-    
-    ("技术革命与范式转换 (Technological Revolutions)", "大语言模型 (LLM)", "RELATED_TO",
-     "LLM/AI被广泛认为是下一次技术革命的核心：正如蒸汽机定义了工业革命，LLM可能定义AI革命。"),
-    
-    ("黑天鹅事件 (Black Swan Events)", "混沌理论（蝴蝶效应）", "ANALOGOUS_TO",
-     "黑天鹅(低概率高影响)与蝴蝶效应(微小扰动导致巨大变化)都描述系统的极端敏感性。两者都挑战了线性预测和正态分布假设。"),
-    
-    ("黑天鹅事件 (Black Swan Events)", "涌现能力 (Emergent Abilities)", "ANALOGOUS_TO",
-     "黑天鹅事件出人意料地改变历史走向。LLM的涌现能力同样是'黑天鹅式'的——没有人预测到某个规模的模型会突然获得推理、代码编写等能力。"),
-    
-    ("以史为鉴 (Learning from History)", "预训练-微调范式", "ANALOGOUS_TO",
-     "'以史为鉴'——从海量历史经验中学习模式以指导未来决策。预训练就是模型的'读史'过程：在海量文本中学习人类知识的模式，微调则是将这些经验应用于具体场景。"),
-    
-    ("以史为鉴 (Learning from History)", "迁移学习", "ANALOGOUS_TO",
-     "以史为鉴的核心是知识迁移：从一个时代/场景学到的经验应用到新的时代/场景。这正是迁移学习的本质——将源域的知识迁移到目标域。"),
-    
-    ("长尾效应 (The Long Tail)", "注意力机制", "RELATED_TO",
-     "长尾分布中大量低频元素的重要性。Attention机制允许模型关注到输入中的'长尾'信息——那些不在位置前端但语义重要的token。"),
-    
+    (
+        "历史周期律 (Dynastic Cycle)",
+        "梯度下降与优化器",
+        "ANALOGOUS_TO",
+        "历史周期律的兴→衰→新生循环类似优化过程中的学习率调度：warm-up(兴起)→训练(繁荣)→学习率衰减(衰落)→重新warm-up(新周期)。Cosine annealing就是一种'周期律'。",
+    ),
+    (
+        "技术革命与范式转换 (Technological Revolutions)",
+        "Scaling Law (规模定律)",
+        "RELATED_TO",
+        "每次技术革命都是一个范式转换——从蒸汽机到电力到计算机。LLM的涌现能力也是一种范式转换：当规模突破阈值，系统能力发生质变，类似技术革命的突变点。",
+    ),
+    (
+        "技术革命与范式转换 (Technological Revolutions)",
+        "大语言模型 (LLM)",
+        "RELATED_TO",
+        "LLM/AI被广泛认为是下一次技术革命的核心：正如蒸汽机定义了工业革命，LLM可能定义AI革命。",
+    ),
+    (
+        "黑天鹅事件 (Black Swan Events)",
+        "混沌理论（蝴蝶效应）",
+        "ANALOGOUS_TO",
+        "黑天鹅(低概率高影响)与蝴蝶效应(微小扰动导致巨大变化)都描述系统的极端敏感性。两者都挑战了线性预测和正态分布假设。",
+    ),
+    (
+        "黑天鹅事件 (Black Swan Events)",
+        "涌现能力 (Emergent Abilities)",
+        "ANALOGOUS_TO",
+        "黑天鹅事件出人意料地改变历史走向。LLM的涌现能力同样是'黑天鹅式'的——没有人预测到某个规模的模型会突然获得推理、代码编写等能力。",
+    ),
+    (
+        "以史为鉴 (Learning from History)",
+        "预训练-微调范式",
+        "ANALOGOUS_TO",
+        "'以史为鉴'——从海量历史经验中学习模式以指导未来决策。预训练就是模型的'读史'过程：在海量文本中学习人类知识的模式，微调则是将这些经验应用于具体场景。",
+    ),
+    (
+        "以史为鉴 (Learning from History)",
+        "迁移学习",
+        "ANALOGOUS_TO",
+        "以史为鉴的核心是知识迁移：从一个时代/场景学到的经验应用到新的时代/场景。这正是迁移学习的本质——将源域的知识迁移到目标域。",
+    ),
+    (
+        "长尾效应 (The Long Tail)",
+        "注意力机制",
+        "RELATED_TO",
+        "长尾分布中大量低频元素的重要性。Attention机制允许模型关注到输入中的'长尾'信息——那些不在位置前端但语义重要的token。",
+    ),
     # === 修昔底德陷阱 ↔ 博弈 ===
-    ("修昔底德陷阱 (Thucydides Trap)", "博弈对抗与零和博弈 (Adversarial Game Theory)", "RELATED_TO",
-     "修昔底德陷阱本质上是博弈论中的'承诺问题'——新兴大国的崛起承诺不可置信，导致现有霸权选择先发制人。"),
-    
+    (
+        "修昔底德陷阱 (Thucydides Trap)",
+        "博弈对抗与零和博弈 (Adversarial Game Theory)",
+        "RELATED_TO",
+        "修昔底德陷阱本质上是博弈论中的'承诺问题'——新兴大国的崛起承诺不可置信，导致现有霸权选择先发制人。",
+    ),
     # === 艺术 ↔ 计算机/AI ===
-    ("生成式艺术 (Generative Art)", "扩散模型 (Diffusion Models)", "BUILDS_ON",
-     "扩散模型(DALL-E, Stable Diffusion, Midjourney)是当前生成式艺术最强大的技术基础。从随机噪声中'去噪'出艺术作品，AI成为了艺术创作的新工具。"),
-    
-    ("生成式艺术 (Generative Art)", "生成对抗网络 (GAN)", "BUILDS_ON",
-     "GAN开启了AI艺术的新纪元——StyleGAN等模型能生成逼真的人脸、艺术作品，模糊了'创作'与'生成'的边界。"),
-    
-    ("创造力与组合创新 (Combinatorial Creativity)", "知识图谱 (Knowledge Graph)", "ANALOGOUS_TO",
-     "创造力 = 跨域联想。知识图谱将不同领域的知识节点连接起来，为发现'意想不到的关联'提供结构化基础——Knowledge Nexus项目本身就是组合创新理论的实践。"),
-    
-    ("创造力与组合创新 (Combinatorial Creativity)", "检索增强生成 (RAG)", "RELATED_TO",
-     "组合创新需要广泛的知识检索和碰撞。RAG通过检索多源知识再生成新内容，提供了一种'机械化的组合创新'——从不同来源检索知识片段，由AI重新组合。"),
-    
-    ("极简主义 (Minimalism)", "奥卡姆剃刀", "ANALOGOUS_TO",
-     "极简主义(Less is more)与奥卡姆剃刀(如无必要，勿增实体)是同一理念在不同领域的表达：在艺术中去除冗余元素，在科学中去除冗余假设，追求最简约的解释/表达。"),
-    
-    ("极简主义 (Minimalism)", "量化与模型压缩", "ANALOGOUS_TO",
-     "极简主义去除一切非本质元素。模型压缩/剪枝也是去除模型中'非本质'的参数，在保持核心能力的前提下追求最小化。"),
-    
-    ("透视法 (Perspective / Projection)", "卷积神经网络 (CNN)", "ANALOGOUS_TO",
-     "透视法将3D世界映射到2D平面——这是一种投影/降维。CNN同样通过卷积和池化将高维图像特征逐层降维提取，文艺复兴的投影思想在计算机视觉中得到了技术延续。"),
-    
-    ("透视法 (Perspective / Projection)", "变分自编码器 (VAE)", "ANALOGOUS_TO",
-     "透视法是高维到低维的有损投影。VAE将数据编码到低维潜在空间再解码重建——编码过程就是一种学到的'透视法'，找到数据最本质的低维表示。"),
-    
-    ("即兴创作 (Improvisation)", "自回归生成模型", "ANALOGOUS_TO",
-     "即兴创作基于已有旋律/和声实时生成下一个音符。自回归模型同样基于已生成的上下文逐步预测下一个token——两者都是'基于已有、创造未来'的序列生成过程。"),
-    
-    ("即兴创作 (Improvisation)", "上下文学习 (In-Context Learning)", "ANALOGOUS_TO",
-     "爵士乐手根据当前演奏的上下文(调性、节奏、其他乐手的演奏)即兴发挥。LLM的In-Context Learning同样根据给定的上下文(examples)实时调整输出策略，无需重新训练。"),
-    
-    ("和声学 (Harmony / Music Theory)", "傅里叶变换", "RELATED_TO",
-     "和声学的数学基础是频率分析。傅里叶变换将复杂声音分解为单一频率的叠加——和弦就是特定频率组合的傅里叶合成。音乐之美有精确的数学描述。"),
-    
-    ("黄金比例 (Golden Ratio)", "梯度下降法", "RELATED_TO",
-     "黄金比例(φ=1.618)出现在斐波那契数列中，而黄金分割搜索法是一维优化中的经典方法——利用φ的数学性质在搜索区间中高效定位最优点。"),
-    
+    (
+        "生成式艺术 (Generative Art)",
+        "扩散模型 (Diffusion Models)",
+        "BUILDS_ON",
+        "扩散模型(DALL-E, Stable Diffusion, Midjourney)是当前生成式艺术最强大的技术基础。从随机噪声中'去噪'出艺术作品，AI成为了艺术创作的新工具。",
+    ),
+    (
+        "生成式艺术 (Generative Art)",
+        "生成对抗网络 (GAN)",
+        "BUILDS_ON",
+        "GAN开启了AI艺术的新纪元——StyleGAN等模型能生成逼真的人脸、艺术作品，模糊了'创作'与'生成'的边界。",
+    ),
+    (
+        "创造力与组合创新 (Combinatorial Creativity)",
+        "知识图谱 (Knowledge Graph)",
+        "ANALOGOUS_TO",
+        "创造力 = 跨域联想。知识图谱将不同领域的知识节点连接起来，为发现'意想不到的关联'提供结构化基础——Knowledge Nexus项目本身就是组合创新理论的实践。",
+    ),
+    (
+        "创造力与组合创新 (Combinatorial Creativity)",
+        "检索增强生成 (RAG)",
+        "RELATED_TO",
+        "组合创新需要广泛的知识检索和碰撞。RAG通过检索多源知识再生成新内容，提供了一种'机械化的组合创新'——从不同来源检索知识片段，由AI重新组合。",
+    ),
+    (
+        "极简主义 (Minimalism)",
+        "奥卡姆剃刀",
+        "ANALOGOUS_TO",
+        "极简主义(Less is more)与奥卡姆剃刀(如无必要，勿增实体)是同一理念在不同领域的表达：在艺术中去除冗余元素，在科学中去除冗余假设，追求最简约的解释/表达。",
+    ),
+    (
+        "极简主义 (Minimalism)",
+        "量化与模型压缩",
+        "ANALOGOUS_TO",
+        "极简主义去除一切非本质元素。模型压缩/剪枝也是去除模型中'非本质'的参数，在保持核心能力的前提下追求最小化。",
+    ),
+    (
+        "透视法 (Perspective / Projection)",
+        "卷积神经网络 (CNN)",
+        "ANALOGOUS_TO",
+        "透视法将3D世界映射到2D平面——这是一种投影/降维。CNN同样通过卷积和池化将高维图像特征逐层降维提取，文艺复兴的投影思想在计算机视觉中得到了技术延续。",
+    ),
+    (
+        "透视法 (Perspective / Projection)",
+        "变分自编码器 (VAE)",
+        "ANALOGOUS_TO",
+        "透视法是高维到低维的有损投影。VAE将数据编码到低维潜在空间再解码重建——编码过程就是一种学到的'透视法'，找到数据最本质的低维表示。",
+    ),
+    (
+        "即兴创作 (Improvisation)",
+        "自回归生成模型",
+        "ANALOGOUS_TO",
+        "即兴创作基于已有旋律/和声实时生成下一个音符。自回归模型同样基于已生成的上下文逐步预测下一个token——两者都是'基于已有、创造未来'的序列生成过程。",
+    ),
+    (
+        "即兴创作 (Improvisation)",
+        "上下文学习 (In-Context Learning)",
+        "ANALOGOUS_TO",
+        "爵士乐手根据当前演奏的上下文(调性、节奏、其他乐手的演奏)即兴发挥。LLM的In-Context Learning同样根据给定的上下文(examples)实时调整输出策略，无需重新训练。",
+    ),
+    (
+        "和声学 (Harmony / Music Theory)",
+        "傅里叶变换",
+        "RELATED_TO",
+        "和声学的数学基础是频率分析。傅里叶变换将复杂声音分解为单一频率的叠加——和弦就是特定频率组合的傅里叶合成。音乐之美有精确的数学描述。",
+    ),
+    (
+        "黄金比例 (Golden Ratio)",
+        "梯度下降法",
+        "RELATED_TO",
+        "黄金比例(φ=1.618)出现在斐波那契数列中，而黄金分割搜索法是一维优化中的经典方法——利用φ的数学性质在搜索区间中高效定位最优点。",
+    ),
     # === 艺术 ↔ 哲学 ===
-    ("极简主义 (Minimalism)", "留白 (Negative Space / Ma)", "ANALOGOUS_TO",
-     "极简主义的'Less is more'与东方留白美学'计白当黑'高度相通——两者都认为空白/缺失不是不足而是力量，以最少元素传达最大意义。"),
-    
-    ("创造力与组合创新 (Combinatorial Creativity)", "类比推理", "BUILDS_ON",
-     "组合创新的核心能力就是类比推理——从一个领域的模式看到另一个领域的相似结构。类比推理是创造力的认知基础。"),
-    
+    (
+        "极简主义 (Minimalism)",
+        "留白 (Negative Space / Ma)",
+        "ANALOGOUS_TO",
+        "极简主义的'Less is more'与东方留白美学'计白当黑'高度相通——两者都认为空白/缺失不是不足而是力量，以最少元素传达最大意义。",
+    ),
+    (
+        "创造力与组合创新 (Combinatorial Creativity)",
+        "类比推理",
+        "BUILDS_ON",
+        "组合创新的核心能力就是类比推理——从一个领域的模式看到另一个领域的相似结构。类比推理是创造力的认知基础。",
+    ),
     # === 军事 ↔ 哲学 ===
-    ("孙子兵法 (The Art of War)", "道 (Tao / The Way)", "RELATED_TO",
-     "孙子兵法深受道家思想影响：'道者，令民与上同意也'——以道治军。兵法中'以柔克刚'、'以静制动'等策略直接源于道家哲学。"),
-    
-    ("不战而屈人之兵 (Win Without Fighting)", "无为 (Wu Wei / Non-Action)", "ANALOGOUS_TO",
-     "'不战而屈人之兵'是军事领域的'无为'——通过不直接交战(无为)达到最大战略目标(无不为)。两者都强调最高层次的效能不需要暴力/强制手段。"),
-    
+    (
+        "孙子兵法 (The Art of War)",
+        "道 (Tao / The Way)",
+        "RELATED_TO",
+        "孙子兵法深受道家思想影响：'道者，令民与上同意也'——以道治军。兵法中'以柔克刚'、'以静制动'等策略直接源于道家哲学。",
+    ),
+    (
+        "不战而屈人之兵 (Win Without Fighting)",
+        "无为 (Wu Wei / Non-Action)",
+        "ANALOGOUS_TO",
+        "'不战而屈人之兵'是军事领域的'无为'——通过不直接交战(无为)达到最大战略目标(无不为)。两者都强调最高层次的效能不需要暴力/强制手段。",
+    ),
     # === 历史 ↔ 哲学 ===
-    ("历史周期律 (Dynastic Cycle)", "物极必反 (Reversal at the Extreme)", "ANALOGOUS_TO",
-     "历史周期律是物极必反在宏观历史中的体现：繁荣到极点必然走向衰落，衰落到极点必然孕育新生。"),
-    
-    ("技术革命与范式转换 (Technological Revolutions)", "辩证法 (Dialectics)", "ANALOGOUS_TO",
-     "每次技术革命都是辩证法的体现：旧范式(正题)→危机与挑战(反题)→新技术范式(合题)。螺旋式上升，每一次革命都在更高层次重建。"),
+    (
+        "历史周期律 (Dynastic Cycle)",
+        "物极必反 (Reversal at the Extreme)",
+        "ANALOGOUS_TO",
+        "历史周期律是物极必反在宏观历史中的体现：繁荣到极点必然走向衰落，衰落到极点必然孕育新生。",
+    ),
+    (
+        "技术革命与范式转换 (Technological Revolutions)",
+        "辩证法 (Dialectics)",
+        "ANALOGOUS_TO",
+        "每次技术革命都是辩证法的体现：旧范式(正题)→危机与挑战(反题)→新技术范式(合题)。螺旋式上升，每一次革命都在更高层次重建。",
+    ),
 ]
+
 
 def main():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
+
     # 1. 插入知识节点
     node_name_to_id = {}
     inserted_nodes = 0
     skipped_nodes = 0
-    
+
     for node in nodes:
         cursor.execute("SELECT id FROM knowledge_nodes WHERE name = ?", (node["name"],))
         existing = cursor.fetchone()
@@ -391,37 +516,48 @@ def main():
             skipped_nodes += 1
             print(f"  ⏩ 已存在: {node['name']}")
             continue
-        
+
         nid = get_id()
         node_name_to_id[node["name"]] = nid
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO knowledge_nodes 
             (id, name, node_type, domain, description, summary, source_info, year, tags, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            nid, node["name"], node["node_type"], node["domain"],
-            node["description"], node["summary"], None, node.get("year"),
-            node.get("tags"), now, now
-        ))
+        """,
+            (
+                nid,
+                node["name"],
+                node["node_type"],
+                node["domain"],
+                node["description"],
+                node["summary"],
+                None,
+                node.get("year"),
+                node.get("tags"),
+                now,
+                now,
+            ),
+        )
         inserted_nodes += 1
         print(f"  ✅ 新增节点: {node['name']} [{node['node_type']}|{node['domain']}]")
-    
+
     print(f"\n📊 节点: 新增 {inserted_nodes}, 跳过 {skipped_nodes}")
-    
+
     # 2. 构建全库名称→ID映射
     cursor.execute("SELECT id, name FROM knowledge_nodes")
     for row in cursor.fetchall():
         node_name_to_id[row[1]] = row[0]
-    
+
     # 3. 插入关系
     inserted_rels = 0
     skipped_rels = 0
     failed_rels = 0
-    
+
     for src_name, tgt_name, rel_type, desc in relations_def:
         src_id = node_name_to_id.get(src_name)
         tgt_id = node_name_to_id.get(tgt_name)
-        
+
         if not src_id or not tgt_id:
             failed_rels += 1
             missing = []
@@ -431,32 +567,46 @@ def main():
                 missing.append(f"目标'{tgt_name}'")
             print(f"  ❌ 找不到节点: {', '.join(missing)}")
             continue
-        
-        cursor.execute("""
+
+        cursor.execute(
+            """
             SELECT id FROM relations 
             WHERE source_id = ? AND target_id = ? AND relation_type = ?
-        """, (src_id, tgt_id, rel_type))
+        """,
+            (src_id, tgt_id, rel_type),
+        )
         if cursor.fetchone():
             skipped_rels += 1
             print(f"  ⏩ 关系已存在: {src_name} --{rel_type}--> {tgt_name}")
             continue
-        
+
         rid = get_id()
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO relations 
             (id, source_id, target_id, relation_type, source_type, target_type, 
              description, confidence, ai_generated, status, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            rid, src_id, tgt_id, rel_type,
-            "knowledge_node", "knowledge_node",
-            desc, 1.0, False, "confirmed", now
-        ))
+        """,
+            (
+                rid,
+                src_id,
+                tgt_id,
+                rel_type,
+                "knowledge_node",
+                "knowledge_node",
+                desc,
+                1.0,
+                False,
+                "confirmed",
+                now,
+            ),
+        )
         inserted_rels += 1
         print(f"  ✅ {src_name} --{rel_type}--> {tgt_name}")
-    
+
     conn.commit()
-    
+
     # 统计
     cursor.execute("SELECT COUNT(*) FROM knowledge_nodes")
     total_nodes = cursor.fetchone()[0]
@@ -464,12 +614,13 @@ def main():
     total_rels = cursor.fetchone()[0]
     cursor.execute("SELECT DISTINCT domain FROM knowledge_nodes")
     domains = [r[0] for r in cursor.fetchall()]
-    
+
     print(f"\n📊 关系: 新增 {inserted_rels}, 跳过 {skipped_rels}, 失败 {failed_rels}")
     print(f"\n🎉 数据库总计: {total_nodes} 节点, {total_rels} 关系")
     print(f"📌 所有领域: {', '.join(sorted(domains))}")
-    
+
     conn.close()
+
 
 if __name__ == "__main__":
     print("=" * 60)

@@ -2,6 +2,7 @@
 LLM 客户端 — 兼容 OpenAI chat/completions 格式。
 支持 Doubao / DeepSeek / OpenAI / Ollama 等 OpenAI 兼容 API。
 """
+
 import json
 import logging
 import httpx
@@ -38,7 +39,9 @@ async def chat_completion(
     if max_tokens:
         body["max_tokens"] = max_tokens
 
-    logger.info(f"🤖 LLM 请求: model={model}, messages={len(messages)}, temp={temperature}")
+    logger.info(
+        f"🤖 LLM 请求: model={model}, messages={len(messages)}, temp={temperature}"
+    )
 
     async with httpx.AsyncClient(timeout=120) as client:
         resp = await client.post(
@@ -69,6 +72,7 @@ async def chat_completion_json(
 
     # 提取 JSON（可能被 ```json ... ``` 包裹）
     import re
+
     json_match = re.search(r"```(?:json)?\s*([\s\S]*?)```", content)
     json_str = json_match.group(1).strip() if json_match else content.strip()
 

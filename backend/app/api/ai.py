@@ -1,10 +1,11 @@
 """
 AI 分析 API — 利用 LLM 发现跨领域知识关联和推导新知识。
 """
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select
 
 from app.core.database import get_db
 from app.models.models import KnowledgeNode, Paper
@@ -136,23 +137,34 @@ async def api_list_all_nodes(
         kn_q = kn_q.where(KnowledgeNode.domain == domain)
     kn_result = await db.execute(kn_q)
     for kn in kn_result.scalars().all():
-        items.append({
-            "id": kn.id, "name": kn.name, "type": "knowledge_node",
-            "node_type": kn.node_type, "domain": kn.domain,
-            "summary": kn.summary or "",
-        })
+        items.append(
+            {
+                "id": kn.id,
+                "name": kn.name,
+                "type": "knowledge_node",
+                "node_type": kn.node_type,
+                "domain": kn.domain,
+                "summary": kn.summary or "",
+            }
+        )
     # 论文
     from app.api.graph import _normalize_paper_domain
+
     p_result = await db.execute(select(Paper))
     for p in p_result.scalars().all():
         p_domain = _normalize_paper_domain(p.fields_of_study)
         if domain and p_domain != domain:
             continue
-        items.append({
-            "id": p.id, "name": p.key_contributions or p.title, "type": "paper",
-            "node_type": "paper", "domain": p_domain,
-            "summary": p.summary or "",
-        })
+        items.append(
+            {
+                "id": p.id,
+                "name": p.key_contributions or p.title,
+                "type": "paper",
+                "node_type": "paper",
+                "domain": p_domain,
+                "summary": p.summary or "",
+            }
+        )
     # 领域统计
     domain_counts = {}
     for item in items:

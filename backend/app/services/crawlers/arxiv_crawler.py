@@ -29,12 +29,18 @@ class ArxivCrawler(BaseCrawler):
     """
 
     def __init__(self, rate_limit: float = 3.0, enable_citation_check: bool = True):
-        super().__init__(rate_limit=rate_limit, rate_jitter=0.5, use_browser_headers=False)
+        super().__init__(
+            rate_limit=rate_limit, rate_jitter=0.5, use_browser_headers=False
+        )
         self.enable_citation_check = enable_citation_check
 
     async def search_papers(
-        self, query: str, year_from: int = 2016, year_to: int = 2026,
-        min_citations: int = 0, limit: int = 100,
+        self,
+        query: str,
+        year_from: int = 2016,
+        year_to: int = 2026,
+        min_citations: int = 0,
+        limit: int = 100,
     ) -> list[PaperMeta]:
         """搜索 arXiv 论文，并通过 OpenAlex 交叉验证引用量"""
         # 第一阶段：从 arXiv 获取论文列表
@@ -104,7 +110,9 @@ class ArxivCrawler(BaseCrawler):
                 if len(entries) < batch_size:
                     break
 
-                logger.info(f"[arXiv] '{query}': fetched {len(papers)} papers (offset: {start})")
+                logger.info(
+                    f"[arXiv] '{query}': fetched {len(papers)} papers (offset: {start})"
+                )
 
             except Exception as e:
                 self.stats.requests_failed += 1
@@ -137,7 +145,7 @@ class ArxivCrawler(BaseCrawler):
                 self.stats.requests_total += 1
 
                 # 用标题搜索作为后备（更可靠）
-                search_title = paper.title[:100].replace('"', '')
+                search_title = paper.title[:100].replace('"', "")
                 resp = await self.client.get(
                     f"{OPENALEX_API_BASE}/works",
                     params={
@@ -161,7 +169,9 @@ class ArxivCrawler(BaseCrawler):
                     self.stats.requests_failed += 1
 
             except Exception as e:
-                logger.debug(f"OpenAlex enrichment failed for '{paper.title[:50]}': {e}")
+                logger.debug(
+                    f"OpenAlex enrichment failed for '{paper.title[:50]}': {e}"
+                )
 
             enriched.append(paper)
 
@@ -248,17 +258,19 @@ class ArxivCrawler(BaseCrawler):
             # 提取分类
             categories = re.findall(r'<category[^>]*term="([^"]+)"', entry)
 
-            papers.append(PaperMeta(
-                title=title,
-                abstract=abstract,
-                authors=authors[:20],
-                year=year,
-                arxiv_id=arxiv_id,
-                doi=doi,
-                url=f"https://arxiv.org/abs/{arxiv_id}" if arxiv_id else None,
-                pdf_url=pdf_url,
-                fields_of_study=[c for c in categories if c.startswith("cs.")],
-            ))
+            papers.append(
+                PaperMeta(
+                    title=title,
+                    abstract=abstract,
+                    authors=authors[:20],
+                    year=year,
+                    arxiv_id=arxiv_id,
+                    doi=doi,
+                    url=f"https://arxiv.org/abs/{arxiv_id}" if arxiv_id else None,
+                    pdf_url=pdf_url,
+                    fields_of_study=[c for c in categories if c.startswith("cs.")],
+                )
+            )
 
         return papers
 

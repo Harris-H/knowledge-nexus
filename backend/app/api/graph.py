@@ -25,6 +25,7 @@ _DOMAIN_MAP = {
     "chemistry": "chemistry",
 }
 
+
 def _normalize_paper_domain(fields_of_study: str | None) -> str:
     if not fields_of_study:
         return "computer_science"
@@ -45,27 +46,32 @@ async def get_full_graph(
     all_node_ids = set()
 
     # 1. 获取论文节点
-    query = select(Paper).where(Paper.citation_count >= min_citations).order_by(
-        Paper.citation_count.desc()
-    ).limit(limit)
+    query = (
+        select(Paper)
+        .where(Paper.citation_count >= min_citations)
+        .order_by(Paper.citation_count.desc())
+        .limit(limit)
+    )
     result = await db.execute(query)
     papers = result.scalars().all()
 
     for p in papers:
         all_node_ids.add(p.id)
-        nodes.append(GraphNode(
-            id=p.id,
-            type="paper",
-            label=p.key_contributions or p.title,
-            properties={
-                "year": p.year,
-                "citations": p.citation_count,
-                "impact_score": p.impact_score,
-                "venue": p.venue or "",
-                "full_title": p.title,
-                "domain": _normalize_paper_domain(p.fields_of_study),
-            },
-        ))
+        nodes.append(
+            GraphNode(
+                id=p.id,
+                type="paper",
+                label=p.key_contributions or p.title,
+                properties={
+                    "year": p.year,
+                    "citations": p.citation_count,
+                    "impact_score": p.impact_score,
+                    "venue": p.venue or "",
+                    "full_title": p.title,
+                    "domain": _normalize_paper_domain(p.fields_of_study),
+                },
+            )
+        )
 
     # 2. 获取所有知识节点
     kn_result = await db.execute(select(KnowledgeNode))
@@ -73,19 +79,21 @@ async def get_full_graph(
 
     for kn in kn_nodes:
         all_node_ids.add(kn.id)
-        nodes.append(GraphNode(
-            id=kn.id,
-            type=kn.node_type,  # phenomenon / theorem / law / method / ...
-            label=kn.name,
-            properties={
-                "year": kn.year,
-                "domain": kn.domain,
-                "summary": kn.summary or "",
-                "source_info": kn.source_info or "",
-                "node_type": kn.node_type,
-                "description": kn.description or "",
-            },
-        ))
+        nodes.append(
+            GraphNode(
+                id=kn.id,
+                type=kn.node_type,  # phenomenon / theorem / law / method / ...
+                label=kn.name,
+                properties={
+                    "year": kn.year,
+                    "domain": kn.domain,
+                    "summary": kn.summary or "",
+                    "source_info": kn.source_info or "",
+                    "node_type": kn.node_type,
+                    "description": kn.description or "",
+                },
+            )
+        )
 
     # 3. 获取所有已确认的关系
     edges = []
@@ -98,16 +106,18 @@ async def get_full_graph(
             )
         )
         for rel in result.scalars().all():
-            edges.append(GraphEdge(
-                id=rel.id,
-                source=rel.source_id,
-                target=rel.target_id,
-                type=rel.relation_type,
-                properties={
-                    "description": rel.description or "",
-                    "confidence": rel.confidence,
-                },
-            ))
+            edges.append(
+                GraphEdge(
+                    id=rel.id,
+                    source=rel.source_id,
+                    target=rel.target_id,
+                    type=rel.relation_type,
+                    properties={
+                        "description": rel.description or "",
+                        "confidence": rel.confidence,
+                    },
+                )
+            )
 
     return SubgraphResponse(nodes=nodes, edges=edges)
 
@@ -147,17 +157,19 @@ async def get_subgraph(
             relations = result.scalars().all()
 
             for rel in relations:
-                edges.append(GraphEdge(
-                    id=rel.id,
-                    source=rel.source_id,
-                    target=rel.target_id,
-                    type=rel.relation_type,
-                    properties={
-                        "description": rel.description or "",
-                        "confidence": rel.confidence,
-                        "ai_generated": rel.ai_generated,
-                    },
-                ))
+                edges.append(
+                    GraphEdge(
+                        id=rel.id,
+                        source=rel.source_id,
+                        target=rel.target_id,
+                        type=rel.relation_type,
+                        properties={
+                            "description": rel.description or "",
+                            "confidence": rel.confidence,
+                            "ai_generated": rel.ai_generated,
+                        },
+                    )
+                )
                 next_ids.add(rel.source_id)
                 next_ids.add(rel.target_id)
 
@@ -201,7 +213,7 @@ async def get_subgraph(
 
     # 限制返回数量
     node_list = list(nodes.values())[:limit]
-    edge_list = edges[:limit * 2]
+    edge_list = edges[: limit * 2]
 
     return SubgraphResponse(nodes=node_list, edges=edge_list)
 

@@ -1,4 +1,5 @@
 """为已有论文添加 fields_of_study 字段"""
+
 import sqlite3
 
 DB_PATH = "backend/knowledge_nexus.db"
@@ -46,8 +47,9 @@ for pid, title, key_contrib in papers:
     fields = None
     # 尝试通过 key_contributions 匹配
     for keyword, field_value in FIELD_MAP.items():
-        if (key_contrib and keyword.lower() in key_contrib.lower()) or \
-           (title and keyword.lower() in title.lower()):
+        if (key_contrib and keyword.lower() in key_contrib.lower()) or (
+            title and keyword.lower() in title.lower()
+        ):
             fields = field_value
             break
 

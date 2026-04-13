@@ -37,13 +37,19 @@ async def search_papers(
 
     results = []
     for p in papers:
-        snippet = p.abstract[:200] + "..." if p.abstract and len(p.abstract) > 200 else p.abstract
-        results.append(SearchResult(
-            id=p.id,
-            type="paper",
-            title=p.title,
-            snippet=snippet,
-            score=p.impact_score,
-        ))
+        snippet = (
+            p.abstract[:200] + "..."
+            if p.abstract and len(p.abstract) > 200
+            else p.abstract
+        )
+        results.append(
+            SearchResult(
+                id=p.id,
+                type="paper",
+                title=p.title,
+                snippet=snippet,
+                score=p.impact_score,
+            )
+        )
 
     return SearchResponse(results=results, total=len(results))

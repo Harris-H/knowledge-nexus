@@ -39,12 +39,18 @@ class OpenAlexCrawler(BaseCrawler):
     """
 
     def __init__(self, email: str = "", rate_limit: float = 1.0):
-        super().__init__(rate_limit=rate_limit, rate_jitter=0.3, use_browser_headers=False)
+        super().__init__(
+            rate_limit=rate_limit, rate_jitter=0.3, use_browser_headers=False
+        )
         self.email = email  # 用于 polite pool
 
     async def search_papers(
-        self, query: str, year_from: int = 2016, year_to: int = 2026,
-        min_citations: int = 100, limit: int = 100,
+        self,
+        query: str,
+        year_from: int = 2016,
+        year_to: int = 2026,
+        min_citations: int = 100,
+        limit: int = 100,
     ) -> list[PaperMeta]:
         """搜索高被引论文（使用 OpenAlex 官方 search.title_and_abstract 参数）"""
         papers = []
@@ -152,7 +158,7 @@ class OpenAlexCrawler(BaseCrawler):
         # 提取 DOI
         doi = data.get("doi")
         if doi and doi.startswith("https://doi.org/"):
-            doi = doi[len("https://doi.org/"):]
+            doi = doi[len("https://doi.org/") :]
 
         # 提取外部 ID
         ids = data.get("ids") or {}
@@ -220,8 +226,12 @@ class OpenAlexCrawler(BaseCrawler):
     # ──────────────────────────────────────────────
 
     async def search_by_author(
-        self, author_id: str, year_from: int = 2016, year_to: int = 2026,
-        min_citations: int = 0, limit: int = 100,
+        self,
+        author_id: str,
+        year_from: int = 2016,
+        year_to: int = 2026,
+        min_citations: int = 0,
+        limit: int = 100,
     ) -> list[PaperMeta]:
         """按 OpenAlex author ID 搜索该作者的论文"""
         papers: list[PaperMeta] = []
@@ -269,8 +279,12 @@ class OpenAlexCrawler(BaseCrawler):
         return papers[:limit]
 
     async def search_by_institution(
-        self, institution_id: str, year_from: int = 2016, year_to: int = 2026,
-        min_citations: int = 0, limit: int = 100,
+        self,
+        institution_id: str,
+        year_from: int = 2016,
+        year_to: int = 2026,
+        min_citations: int = 0,
+        limit: int = 100,
     ) -> list[PaperMeta]:
         """按 OpenAlex institution ID 搜索该机构的论文"""
         papers: list[PaperMeta] = []
@@ -318,7 +332,10 @@ class OpenAlexCrawler(BaseCrawler):
         return papers[:limit]
 
     async def discover_top_authors(
-        self, institution_id: str, min_h_index: int = 50, limit: int = 50,
+        self,
+        institution_id: str,
+        min_h_index: int = 50,
+        limit: int = 50,
     ) -> list[dict]:
         """发现某机构的高 h-index 学者
 
@@ -333,7 +350,9 @@ class OpenAlexCrawler(BaseCrawler):
         if self.email:
             params["mailto"] = self.email
 
-        logger.info(f"[OpenAlex] Discover authors: institution={institution_id}, h>{min_h_index}")
+        logger.info(
+            f"[OpenAlex] Discover authors: institution={institution_id}, h>{min_h_index}"
+        )
         data = await self.fetch(f"{OPENALEX_API_BASE}/authors", params=params)
         if not data or "results" not in data:
             return []
@@ -341,13 +360,15 @@ class OpenAlexCrawler(BaseCrawler):
         authors = []
         for a in data["results"]:
             stats = a.get("summary_stats") or {}
-            authors.append({
-                "id": a.get("id", "").replace("https://openalex.org/", ""),
-                "name": a.get("display_name", ""),
-                "h_index": stats.get("h_index", 0),
-                "cited_by_count": a.get("cited_by_count", 0),
-                "works_count": a.get("works_count", 0),
-            })
+            authors.append(
+                {
+                    "id": a.get("id", "").replace("https://openalex.org/", ""),
+                    "name": a.get("display_name", ""),
+                    "h_index": stats.get("h_index", 0),
+                    "cited_by_count": a.get("cited_by_count", 0),
+                    "works_count": a.get("works_count", 0),
+                }
+            )
         return authors[:limit]
 
     async def resolve_author_id(self, name: str) -> list[dict]:
@@ -372,14 +393,18 @@ class OpenAlexCrawler(BaseCrawler):
         for a in data["results"]:
             stats = a.get("summary_stats") or {}
             institutions = a.get("last_known_institutions") or []
-            affiliation = institutions[0].get("display_name", "") if institutions else ""
-            results.append({
-                "id": a.get("id", "").replace("https://openalex.org/", ""),
-                "name": a.get("display_name", ""),
-                "h_index": stats.get("h_index", 0),
-                "affiliation": affiliation,
-                "cited_by_count": a.get("cited_by_count", 0),
-            })
+            affiliation = (
+                institutions[0].get("display_name", "") if institutions else ""
+            )
+            results.append(
+                {
+                    "id": a.get("id", "").replace("https://openalex.org/", ""),
+                    "name": a.get("display_name", ""),
+                    "h_index": stats.get("h_index", 0),
+                    "affiliation": affiliation,
+                    "cited_by_count": a.get("cited_by_count", 0),
+                }
+            )
         return results
 
     async def resolve_institution_id(self, name: str) -> list[dict]:
@@ -402,13 +427,15 @@ class OpenAlexCrawler(BaseCrawler):
 
         results = []
         for inst in data["results"]:
-            results.append({
-                "id": inst.get("id", "").replace("https://openalex.org/", ""),
-                "name": inst.get("display_name", ""),
-                "country": inst.get("country_code", ""),
-                "works_count": inst.get("works_count", 0),
-                "cited_by_count": inst.get("cited_by_count", 0),
-            })
+            results.append(
+                {
+                    "id": inst.get("id", "").replace("https://openalex.org/", ""),
+                    "name": inst.get("display_name", ""),
+                    "country": inst.get("country_code", ""),
+                    "works_count": inst.get("works_count", 0),
+                    "cited_by_count": inst.get("cited_by_count", 0),
+                }
+            )
         return results
 
     @staticmethod

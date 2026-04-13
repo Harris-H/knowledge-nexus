@@ -45,6 +45,7 @@ _API_HEADERS = {
 @dataclass
 class PaperMeta:
     """爬虫返回的论文元数据"""
+
     title: str
     abstract: str | None = None
     authors: list[str] = field(default_factory=list)
@@ -64,6 +65,7 @@ class PaperMeta:
 @dataclass
 class CrawlStats:
     """爬取统计信息"""
+
     requests_total: int = 0
     requests_success: int = 0
     requests_failed: int = 0
@@ -167,8 +169,8 @@ class BaseCrawler(ABC):
 
         self._rotate_ua()
         last_error = None
-        error_attempts = 0        # 非 429 错误的重试计数
-        rate_limit_hits = 0       # 429 的重试计数
+        error_attempts = 0  # 非 429 错误的重试计数
+        rate_limit_hits = 0  # 429 的重试计数
         max_rate_limit_retries = 8  # 429 最多重试 8 次（总等待可达数分钟）
 
         while error_attempts < self.max_retries:
@@ -223,7 +225,7 @@ class BaseCrawler(ABC):
                 if resp.status_code >= 500:
                     error_attempts += 1
                     self.stats.requests_failed += 1
-                    wait = (2 ** error_attempts) + random.uniform(0, 1)
+                    wait = (2**error_attempts) + random.uniform(0, 1)
                     logger.warning(
                         f"Server error {resp.status_code}, retrying in {wait:.1f}s "
                         f"(attempt {error_attempts}/{self.max_retries}): {url}"
@@ -255,7 +257,7 @@ class BaseCrawler(ABC):
                 error_attempts += 1
                 last_error = e
                 self.stats.requests_failed += 1
-                wait = (2 ** error_attempts) + random.uniform(0, 2)
+                wait = (2**error_attempts) + random.uniform(0, 2)
                 logger.warning(
                     f"Timeout (attempt {error_attempts}/{self.max_retries}), "
                     f"retrying in {wait:.1f}s: {url.split('?')[0]}"
@@ -266,7 +268,7 @@ class BaseCrawler(ABC):
                 error_attempts += 1
                 last_error = e
                 self.stats.requests_failed += 1
-                wait = (2 ** error_attempts) + random.uniform(0, 2)
+                wait = (2**error_attempts) + random.uniform(0, 2)
                 logger.warning(
                     f"Request error (attempt {error_attempts}/{self.max_retries}): {e}"
                 )
@@ -279,7 +281,7 @@ class BaseCrawler(ABC):
                 logger.error(
                     f"Unexpected error (attempt {error_attempts}/{self.max_retries}): {e}"
                 )
-                await asyncio.sleep(2 ** error_attempts)
+                await asyncio.sleep(2**error_attempts)
 
         logger.error(
             f"All retries exhausted for {url.split('?')[0]}: "
@@ -304,6 +306,7 @@ class BaseCrawler(ABC):
                     return False
 
                 import aiofiles
+
                 async with aiofiles.open(save_path, "wb") as f:
                     async for chunk in resp.aiter_bytes(chunk_size=8192):
                         await f.write(chunk)
@@ -319,8 +322,12 @@ class BaseCrawler(ABC):
 
     @abstractmethod
     async def search_papers(
-        self, query: str, year_from: int = 2016, year_to: int = 2026,
-        min_citations: int = 100, limit: int = 100,
+        self,
+        query: str,
+        year_from: int = 2016,
+        year_to: int = 2026,
+        min_citations: int = 100,
+        limit: int = 100,
     ) -> list[PaperMeta]:
         """搜索论文"""
         ...
@@ -329,4 +336,3 @@ class BaseCrawler(ABC):
     async def get_paper_details(self, paper_id: str) -> PaperMeta | None:
         """获取论文详情"""
         ...
-

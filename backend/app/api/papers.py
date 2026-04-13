@@ -114,6 +114,7 @@ async def update_paper(
     update_data = data.model_dump(exclude_unset=True)
     if "key_contributions" in update_data and update_data["key_contributions"]:
         import json
+
         update_data["key_contributions"] = json.dumps(
             update_data["key_contributions"], ensure_ascii=False
         )
@@ -169,8 +170,6 @@ async def batch_delete_papers(
         )
 
     # 批量删除论文
-    result = await db.execute(
-        sql_delete(Paper).where(Paper.id.in_(data.ids))
-    )
+    result = await db.execute(sql_delete(Paper).where(Paper.id.in_(data.ids)))
     await db.commit()
     return {"deleted": result.rowcount}

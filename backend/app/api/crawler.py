@@ -8,7 +8,11 @@ from sqlalchemy import select, update
 from app.core.database import get_db, async_session
 from app.models.models import CrawlTask, gen_id
 from app.schemas.schemas import CrawlRequest, CrawlTaskResponse
-from app.services.crawlers.orchestrator import run_crawl_task, cancel_crawl_task, get_elite_presets
+from app.services.crawlers.orchestrator import (
+    run_crawl_task,
+    cancel_crawl_task,
+    get_elite_presets,
+)
 from app.services.crawlers.openalex_crawler import OpenAlexCrawler
 
 router = APIRouter()
@@ -23,7 +27,9 @@ async def _run_crawl_background(task_id: str):
         except Exception as e:
             logger.error(f"Background crawl task {task_id} failed: {e}")
             try:
-                result = await db.execute(select(CrawlTask).where(CrawlTask.id == task_id))
+                result = await db.execute(
+                    select(CrawlTask).where(CrawlTask.id == task_id)
+                )
                 task = result.scalar_one_or_none()
                 if task and task.status not in ("completed", "cancelled", "failed"):
                     task.status = "failed"
@@ -42,7 +48,9 @@ async def _cleanup_zombie_tasks():
         )
         if result.rowcount > 0:
             await db.commit()
-            logger.info(f"Cleaned up {result.rowcount} zombie crawl tasks from previous run")
+            logger.info(
+                f"Cleaned up {result.rowcount} zombie crawl tasks from previous run"
+            )
 
 
 @router.on_event("startup")
@@ -87,7 +95,9 @@ async def cancel_task(task_id: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="任务不存在")
 
     if task.status not in ("queued", "running"):
-        raise HTTPException(status_code=400, detail=f"任务状态为 {task.status}，无法取消")
+        raise HTTPException(
+            status_code=400, detail=f"任务状态为 {task.status}，无法取消"
+        )
 
     cancelled = cancel_crawl_task(task_id)
     if not cancelled:
@@ -118,6 +128,7 @@ async def list_crawl_tasks(db: AsyncSession = Depends(get_db)):
 # ──────────────────────────────────────────────
 # Elite Profile 辅助 API
 # ──────────────────────────────────────────────
+
 
 @router.get("/elite/presets")
 async def list_elite_presets():
@@ -158,7 +169,9 @@ async def search_institutions(q: str):
 
 
 @router.get("/elite/authors/top")
-async def discover_top_authors(institution_id: str, min_h_index: int = 50, limit: int = 20):
+async def discover_top_authors(
+    institution_id: str, min_h_index: int = 50, limit: int = 20
+):
     """发现指定机构的高 h-index 学者"""
     if not institution_id.startswith("I"):
         raise HTTPException(status_code=400, detail="无效的机构 ID，应以 'I' 开头")

@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 # ---- Paper ----
+
 
 class PaperCreate(BaseModel):
     title: str
@@ -17,6 +18,7 @@ class PaperCreate(BaseModel):
     doi: str | None = None
     arxiv_id: str | None = None
 
+
 class PaperUpdate(BaseModel):
     title: str | None = None
     abstract: str | None = None
@@ -24,6 +26,7 @@ class PaperUpdate(BaseModel):
     venue: str | None = None
     domain_id: str | None = None
     key_contributions: list[str] | None = None
+
 
 class PaperResponse(BaseModel):
     id: str
@@ -49,6 +52,7 @@ class PaperResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
 class PaperList(BaseModel):
     items: list[PaperResponse]
     total: int
@@ -58,11 +62,13 @@ class PaperList(BaseModel):
 
 # ---- Graph ----
 
+
 class GraphNode(BaseModel):
     id: str
     type: str  # paper / concept / domain
     label: str
     properties: dict = {}
+
 
 class GraphEdge(BaseModel):
     id: str
@@ -71,9 +77,11 @@ class GraphEdge(BaseModel):
     type: str  # CITES, IMPROVES, ANALOGOUS_TO ...
     properties: dict = {}
 
+
 class SubgraphResponse(BaseModel):
     nodes: list[GraphNode]
     edges: list[GraphEdge]
+
 
 class RelationCreate(BaseModel):
     source_id: str
@@ -84,6 +92,7 @@ class RelationCreate(BaseModel):
 
 
 # ---- Crawler ----
+
 
 class CrawlRequest(BaseModel):
     mode: str = "keyword"  # keyword / author / institution / elite_preset
@@ -96,9 +105,12 @@ class CrawlRequest(BaseModel):
     max_papers: int = 100
     auto_download_pdf: bool = False
     # Elite Profile 扩展字段
-    author_id: str | None = None        # mode=author 时使用，OpenAlex author ID
-    institution_id: str | None = None   # mode=institution 时使用，OpenAlex institution ID
-    preset_name: str | None = None      # mode=elite_preset 时使用，预设配置名称
+    author_id: str | None = None  # mode=author 时使用，OpenAlex author ID
+    institution_id: str | None = (
+        None  # mode=institution 时使用，OpenAlex institution ID
+    )
+    preset_name: str | None = None  # mode=elite_preset 时使用，预设配置名称
+
 
 class CrawlTaskResponse(BaseModel):
     id: str
@@ -121,6 +133,7 @@ class CrawlTaskResponse(BaseModel):
 
 # ---- Search ----
 
+
 class SearchRequest(BaseModel):
     q: str
     mode: str = "keyword"  # keyword / semantic / hybrid
@@ -129,6 +142,7 @@ class SearchRequest(BaseModel):
     year_to: int | None = None
     limit: int = 20
 
+
 class SearchResult(BaseModel):
     id: str
     type: str
@@ -136,12 +150,14 @@ class SearchResult(BaseModel):
     snippet: str | None = None
     score: float = 0.0
 
+
 class SearchResponse(BaseModel):
     results: list[SearchResult]
     total: int
 
 
 # ---- KnowledgeNode ----
+
 
 class KnowledgeNodeCreate(BaseModel):
     name: str
@@ -152,6 +168,7 @@ class KnowledgeNodeCreate(BaseModel):
     source_info: str | None = None
     year: int | None = None
     tags: str | None = None
+
 
 class KnowledgeNodeResponse(BaseModel):
     id: str
@@ -167,12 +184,14 @@ class KnowledgeNodeResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
 class KnowledgeNodeList(BaseModel):
     items: list[KnowledgeNodeResponse]
     total: int
 
 
 # ---- Domain Digest ----
+
 
 class DomainDigestResponse(BaseModel):
     id: str
@@ -188,13 +207,16 @@ class DomainDigestResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
 class DomainDigestList(BaseModel):
     items: list[DomainDigestResponse]
     total: int
 
+
 class CrossDomainAnalysisRequest(BaseModel):
     domain_a: str  # domain name, e.g. "biology"
     domain_b: str  # domain name, e.g. "computer_science"
+
 
 class CrossDomainAnalysisResponse(BaseModel):
     domain_a: str

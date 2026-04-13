@@ -6,7 +6,9 @@ from pydantic import BaseModel
 from app.core.database import get_db
 from app.models.models import KnowledgeNode, Relation, gen_id
 from app.schemas.schemas import (
-    KnowledgeNodeCreate, KnowledgeNodeResponse, KnowledgeNodeList,
+    KnowledgeNodeCreate,
+    KnowledgeNodeResponse,
+    KnowledgeNodeList,
 )
 
 router = APIRouter()
@@ -33,12 +35,16 @@ async def list_knowledge_nodes(
 
     total = (await db.execute(count_query)).scalar() or 0
     rows = (
-        await db.execute(
-            query.order_by(KnowledgeNode.created_at.desc())
-            .offset((page - 1) * size)
-            .limit(size)
+        (
+            await db.execute(
+                query.order_by(KnowledgeNode.created_at.desc())
+                .offset((page - 1) * size)
+                .limit(size)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     return KnowledgeNodeList(
         items=[KnowledgeNodeResponse.model_validate(r) for r in rows],
@@ -48,7 +54,8 @@ async def list_knowledge_nodes(
 
 @router.post("/", response_model=KnowledgeNodeResponse, status_code=201)
 async def create_knowledge_node(
-    data: KnowledgeNodeCreate, db: AsyncSession = Depends(get_db),
+    data: KnowledgeNodeCreate,
+    db: AsyncSession = Depends(get_db),
 ):
     """创建知识节点"""
     node = KnowledgeNode(id=gen_id(), **data.model_dump())
@@ -56,6 +63,7 @@ async def create_knowledge_node(
     await db.flush()
     # 标记对应领域摘要为过期
     from app.services.digest_service import mark_domain_digest_stale
+
     await mark_domain_digest_stale(db, node.domain)
     return KnowledgeNodeResponse.model_validate(node)
 
@@ -79,6 +87,7 @@ async def delete_knowledge_node(node_id: str, db: AsyncSession = Depends(get_db)
     await db.flush()
     # 标记对应领域摘要为过期
     from app.services.digest_service import mark_domain_digest_stale
+
     await mark_domain_digest_stale(db, domain_name)
     return {"status": "deleted", "id": node_id}
 
@@ -89,7 +98,8 @@ class BatchDeleteRequest(BaseModel):
 
 @router.post("/batch-delete")
 async def batch_delete_knowledge_nodes(
-    req: BatchDeleteRequest, db: AsyncSession = Depends(get_db),
+    req: BatchDeleteRequest,
+    db: AsyncSession = Depends(get_db),
 ):
     """批量删除知识节点"""
     if not req.ids:
@@ -108,13 +118,12 @@ async def batch_delete_knowledge_nodes(
         )
     )
     # 删除节点
-    await db.execute(
-        delete(KnowledgeNode).where(KnowledgeNode.id.in_(req.ids))
-    )
+    await db.execute(delete(KnowledgeNode).where(KnowledgeNode.id.in_(req.ids)))
     await db.flush()
 
     # 标记受影响领域摘要为过期
     from app.services.digest_service import mark_domain_digest_stale
+
     for domain_name in affected_domains:
         await mark_domain_digest_stale(db, domain_name)
 
