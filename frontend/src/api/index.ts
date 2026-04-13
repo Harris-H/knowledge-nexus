@@ -82,14 +82,42 @@ export const graphApi = {
 export interface CrawlTask {
   id: string;
   status: string;
+  mode: string;
   domain: string;
   subdomain?: string;
   source: string;
+  author_id?: string;
+  institution_id?: string;
+  preset_name?: string;
   searched: number;
   candidates: number;
   imported: number;
   failed: number;
   created_at: string;
+}
+
+export interface ElitePreset {
+  description: string;
+  researchers: number;
+  institutions: number;
+  min_citations: number;
+  year_from: number;
+}
+
+export interface AuthorResult {
+  id: string;
+  name: string;
+  h_index: number;
+  affiliation: string;
+  cited_by_count: number;
+}
+
+export interface InstitutionResult {
+  id: string;
+  name: string;
+  country: string;
+  works_count: number;
+  cited_by_count: number;
 }
 
 export const crawlerApi = {
@@ -98,6 +126,17 @@ export const crawlerApi = {
   getTask: (id: string) => api.get<CrawlTask>(`/crawler/tasks/${id}`),
   listTasks: () => api.get<CrawlTask[]>("/crawler/tasks"),
   cancelTask: (id: string) => api.post(`/crawler/tasks/${id}/cancel`),
+  // Elite Profile APIs
+  listPresets: () =>
+    api.get<Record<string, ElitePreset>>("/crawler/elite/presets"),
+  searchAuthors: (q: string) =>
+    api.get<AuthorResult[]>("/crawler/elite/authors/search", { params: { q } }),
+  searchInstitutions: (q: string) =>
+    api.get<InstitutionResult[]>("/crawler/elite/institutions/search", { params: { q } }),
+  discoverTopAuthors: (institutionId: string, minHIndex = 50, limit = 20) =>
+    api.get<AuthorResult[]>("/crawler/elite/authors/top", {
+      params: { institution_id: institutionId, min_h_index: minHIndex, limit },
+    }),
 };
 
 // ---- Search ----
