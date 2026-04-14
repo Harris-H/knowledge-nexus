@@ -13,7 +13,9 @@ interface AppState {
   papers: Paper[];
   papersTotal: number;
   papersLoading: boolean;
+  paperSort: { field: string; order: "asc" | "desc" };
   fetchPapers: (page?: number, size?: number) => Promise<void>;
+  setPaperSort: (field: string, order: "asc" | "desc") => void;
 
   // Graph
   graphNodes: GraphNode[];
@@ -43,15 +45,21 @@ export const useStore = create<AppState>((set, get) => ({
   papers: [],
   papersTotal: 0,
   papersLoading: false,
+  paperSort: { field: "impact_score", order: "desc" },
 
   fetchPapers: async (page = 1, size = 20) => {
     set({ papersLoading: true });
     try {
-      const { data } = await papersApi.list({ page, size, sort: "citation_count" });
+      const { field, order } = get().paperSort;
+      const { data } = await papersApi.list({ page, size, sort: field, order });
       set({ papers: data.items, papersTotal: data.total });
     } finally {
       set({ papersLoading: false });
     }
+  },
+
+  setPaperSort: (field, order) => {
+    set({ paperSort: { field, order } });
   },
 
   // ---- Graph ----

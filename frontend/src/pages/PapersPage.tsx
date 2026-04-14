@@ -26,8 +26,14 @@ import { papersApi } from "../api";
 import type { Paper } from "../api";
 
 export default function PapersPage() {
-  const { papers, papersTotal, papersLoading, fetchPapers, fetchSubgraph } =
-    useStore();
+  const {
+    papers,
+    papersTotal,
+    papersLoading,
+    fetchPapers,
+    fetchSubgraph,
+    setPaperSort,
+  } = useStore();
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [detailPaper, setDetailPaper] = useState<Paper | null>(null);
@@ -63,16 +69,18 @@ export default function PapersPage() {
     }
   };
 
+  const paperSort = useStore((s) => s.paperSort);
+
   useEffect(() => {
     fetchPapers(page, 20);
-  }, [page, fetchPapers]);
+  }, [page, paperSort, fetchPapers]);
 
   const columns: ColumnsType<Paper> = [
     {
       title: "评分",
       dataIndex: "impact_score",
       width: 70,
-      sorter: (a, b) => a.impact_score - b.impact_score,
+      sorter: true,
       render: (score: number) => (
         <Tag color={score >= 80 ? "red" : score >= 50 ? "orange" : "blue"}>
           {score.toFixed(1)}
@@ -106,12 +114,13 @@ export default function PapersPage() {
       title: "年份",
       dataIndex: "year",
       width: 70,
+      sorter: true,
     },
     {
       title: "引用",
       dataIndex: "citation_count",
       width: 80,
-      sorter: (a, b) => a.citation_count - b.citation_count,
+      sorter: true,
       defaultSortOrder: "descend" as const,
       render: (v: number) => v?.toLocaleString(),
     },
@@ -143,8 +152,7 @@ export default function PapersPage() {
       title: "入库时间",
       dataIndex: "created_at",
       width: 100,
-      sorter: (a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      sorter: true,
       render: (v: string) => (v ? new Date(v).toLocaleDateString("zh-CN") : "-"),
     },
     {
@@ -246,8 +254,17 @@ export default function PapersPage() {
             current: page,
             total: papersTotal,
             pageSize: 20,
-            onChange: setPage,
             showTotal: (t) => `共 ${t} 篇`,
+          }}
+          onChange={(pag, _filters, sorter) => {
+            const newPage = pag.current ?? 1;
+            const s = Array.isArray(sorter) ? sorter[0] : sorter;
+            if (s?.field && s?.order) {
+              const field = String(s.field);
+              const order = s.order === "ascend" ? "asc" : "desc";
+              setPaperSort(field, order);
+            }
+            setPage(newPage);
           }}
           locale={{ emptyText: <Empty description="暂无论文，请先启动爬取任务" /> }}
         />

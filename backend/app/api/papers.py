@@ -50,6 +50,7 @@ async def list_papers(
     domain_id: str | None = None,
     year: int | None = None,
     sort: str = "impact_score",
+    order: str = "desc",
     db: AsyncSession = Depends(get_db),
 ):
     """论文列表（分页、筛选、排序）"""
@@ -62,7 +63,7 @@ async def list_papers(
 
     # 排序
     sort_col = getattr(Paper, sort, Paper.impact_score)
-    query = query.order_by(sort_col.desc())
+    query = query.order_by(sort_col.asc() if order == "asc" else sort_col.desc())
 
     # 总数
     count_query = select(func.count()).select_from(query.subquery())
