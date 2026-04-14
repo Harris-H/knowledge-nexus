@@ -19,6 +19,7 @@ import {
   NodeIndexOutlined,
   LinkOutlined,
   DeleteOutlined,
+  FilePdfOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { useStore } from "../stores";
@@ -167,7 +168,7 @@ export default function PapersPage() {
     },
     {
       title: "操作",
-      width: 140,
+      width: 170,
       render: (_: unknown, record: Paper) => (
         <Space size="small">
           <Tooltip title="查看详情">
@@ -184,6 +185,17 @@ export default function PapersPage() {
               onClick={() => fetchSubgraph(record.id)}
             />
           </Tooltip>
+          {record.pdf_path && (
+            <Tooltip title="下载 PDF">
+              <Button
+                size="small"
+                icon={<FilePdfOutlined />}
+                style={{ color: "#cf1322" }}
+                href={`${import.meta.env.VITE_API_BASE || "/api/v1"}/papers/${record.id}/pdf`}
+                target="_blank"
+              />
+            </Tooltip>
+          )}
           {record.url && (
             <Tooltip title="原文链接">
               <Button
@@ -374,6 +386,19 @@ export default function PapersPage() {
                 {detailPaper.abstract || "暂无摘要"}
               </div>
             </Descriptions.Item>
+            {detailPaper.pdf_path && (
+              <Descriptions.Item label="PDF">
+                <Button
+                  type="link"
+                  icon={<FilePdfOutlined />}
+                  href={`${import.meta.env.VITE_API_BASE || "/api/v1"}/papers/${detailPaper.id}/pdf`}
+                  target="_blank"
+                  style={{ padding: 0 }}
+                >
+                  下载 PDF
+                </Button>
+              </Descriptions.Item>
+            )}
           </Descriptions>
         )}
       </Drawer>

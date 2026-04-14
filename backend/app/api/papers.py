@@ -1,4 +1,7 @@
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete as sql_delete
 
@@ -6,6 +9,8 @@ from app.core.database import get_db
 from app.models.models import Paper, Author, Relation, gen_id
 from app.schemas.schemas import PaperCreate, PaperUpdate, PaperResponse, PaperList
 from pydantic import BaseModel as PydanticBaseModel
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 router = APIRouter()
 
@@ -170,3 +175,25 @@ async def batch_delete_papers(data: BatchDeleteRequest, db: AsyncSession = Depen
     result = await db.execute(sql_delete(Paper).where(Paper.id.in_(data.ids)))
     await db.commit()
     return {"deleted": result.rowcount}
+
+
+@router.get("/{paper_id}/pdf")
+async def download_paper_pdf(paper_id: str, db: AsyncSession = Depends(get_db)):
+    """下载论文 PDF 文件"""
+    result = await db.execute(select(Paper).where(Paper.id == paper_id))
+    paper = result.scalar_one_or_none()
+    if not paper:
+        raise HTTPException(status_code=404, detail="论文不存在")
+    if not paper.pdf_path:
+        raise HTTPException(status_code=404, detail="该论文暂无 PDF 文件")
+
+    pdf_file = PROJECT_ROOT / paper.pdf_path
+    if not pdf_file.exists():
+        raise HTTPException(status_code=404, detail="PDF 文件不存在，可能已被移除")
+
+    safe_title = "".join(c if c.isalnum() or c in " _-" else "_" for c in paper.title[:80])
+    return FileResponse(
+        path=str(pdf_file),
+        media_type="application/pdf",
+        filename=f"{safe_title}.pdf",
+    )
