@@ -444,7 +444,7 @@ async def confirm_crawl_task(task_id: str, selected_indices: list[int] | None, d
     task.status = "completed"
     task.candidates_data = None  # 清理临时数据
     task.finished_at = datetime.utcnow()
-    elapsed = (task.finished_at - task.started_at).total_seconds()
+    elapsed = (task.finished_at - task.started_at).total_seconds() if task.started_at else 0
     await db.commit()
 
     logger.info(
