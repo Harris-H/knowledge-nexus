@@ -39,6 +39,7 @@ interface AppState {
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+let isPolling = false;
 
 export const useStore = create<AppState>((set, get) => ({
   // ---- Papers ----
@@ -116,6 +117,8 @@ export const useStore = create<AppState>((set, get) => ({
   pollCrawlTask: (taskId: string) => {
     get().stopPolling();
     pollTimer = setInterval(async () => {
+      if (isPolling) return; // guard against overlapping callbacks
+      isPolling = true;
       try {
         const { data } = await crawlerApi.getTask(taskId);
         set({ activeCrawlTask: data });
@@ -128,6 +131,8 @@ export const useStore = create<AppState>((set, get) => ({
         }
       } catch {
         get().stopPolling();
+      } finally {
+        isPolling = false;
       }
     }, 3000);
   },

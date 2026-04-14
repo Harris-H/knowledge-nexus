@@ -372,7 +372,7 @@ async def confirm_crawl_task(task_id: str, selected_indices: list[int] | None, d
         candidates = all_candidates
 
     task.status = "running"
-    await db.commit()
+    await db.flush()  # flush only — keep objects in session
 
     logger.info(f"📥 [Task {task_id}] 开始导入 {len(candidates)}/{len(all_candidates)} 篇论文")
 
@@ -427,9 +427,9 @@ async def confirm_crawl_task(task_id: str, selected_indices: list[int] | None, d
             task.failed += 1
 
         if (task.imported + task.failed) % 10 == 0:
-            await db.commit()
+            await db.flush()  # flush only — commit later to avoid detaching objects
 
-    await db.commit()
+    await db.flush()
 
     # 建立引用关系
     relations_created = 0
@@ -439,13 +439,12 @@ async def confirm_crawl_task(task_id: str, selected_indices: list[int] | None, d
             relations_created += count
         except Exception as e:
             logger.warning(f"Failed to build relations for {paper.id}: {e}")
-    await db.commit()
 
     task.status = "completed"
     task.candidates_data = None  # 清理临时数据
     task.finished_at = datetime.utcnow()
     elapsed = (task.finished_at - task.started_at).total_seconds() if task.started_at else 0
-    await db.commit()
+    await db.commit()  # single commit for all changes
 
     logger.info(
         f"✅ [Task {task_id}] COMPLETED | "
