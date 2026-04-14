@@ -10,7 +10,7 @@ from app.models.models import Paper, Author, Relation, gen_id
 from app.schemas.schemas import PaperCreate, PaperUpdate, PaperResponse, PaperList
 from pydantic import BaseModel as PydanticBaseModel
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 router = APIRouter()
 
