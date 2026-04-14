@@ -52,15 +52,18 @@ async def create_paper(data: PaperCreate, db: AsyncSession = Depends(get_db)):
 async def list_papers(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
+    q: str | None = None,
     domain_id: str | None = None,
     year: int | None = None,
     sort: str = "impact_score",
     order: str = "desc",
     db: AsyncSession = Depends(get_db),
 ):
-    """论文列表（分页、筛选、排序）"""
+    """论文列表（分页、筛选、排序、搜索）"""
     query = select(Paper)
 
+    if q:
+        query = query.where(Paper.title.ilike(f"%{q}%"))
     if domain_id:
         query = query.where(Paper.domain_id == domain_id)
     if year:

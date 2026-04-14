@@ -14,7 +14,7 @@ interface AppState {
   papersTotal: number;
   papersLoading: boolean;
   paperSort: { field: string; order: "asc" | "desc" };
-  fetchPapers: (page?: number, size?: number) => Promise<void>;
+  fetchPapers: (page?: number, size?: number, q?: string) => Promise<void>;
   setPaperSort: (field: string, order: "asc" | "desc") => void;
 
   // Graph
@@ -47,11 +47,13 @@ export const useStore = create<AppState>((set, get) => ({
   papersLoading: false,
   paperSort: { field: "created_at", order: "desc" },
 
-  fetchPapers: async (page = 1, size = 20) => {
+  fetchPapers: async (page = 1, size = 20, q?: string) => {
     set({ papersLoading: true });
     try {
       const { field, order } = get().paperSort;
-      const { data } = await papersApi.list({ page, size, sort: field, order });
+      const params: Record<string, unknown> = { page, size, sort: field, order };
+      if (q) params.q = q;
+      const { data } = await papersApi.list(params);
       set({ papers: data.items, papersTotal: data.total });
     } finally {
       set({ papersLoading: false });

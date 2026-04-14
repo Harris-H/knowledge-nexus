@@ -36,6 +36,7 @@ export default function PapersPage() {
     setPaperSort,
   } = useStore();
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [searchQuery, setSearchQuery] = useState("");
   const [detailPaper, setDetailPaper] = useState<Paper | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -47,7 +48,7 @@ export default function PapersPage() {
       message.success("论文已删除");
       if (detailPaper?.id === id) setDetailPaper(null);
       setSelectedIds((prev) => prev.filter((x) => x !== id));
-      fetchPapers(page, 20);
+      fetchPapers(page, pageSize, searchQuery);
     } catch {
       message.error("删除失败");
     }
@@ -62,7 +63,7 @@ export default function PapersPage() {
       setSelectedIds([]);
       if (detailPaper && selectedIds.includes(detailPaper.id))
         setDetailPaper(null);
-      fetchPapers(page, 20);
+      fetchPapers(page, pageSize, searchQuery);
     } catch {
       message.error("批量删除失败");
     } finally {
@@ -73,8 +74,8 @@ export default function PapersPage() {
   const paperSort = useStore((s) => s.paperSort);
 
   useEffect(() => {
-    fetchPapers(page, 20);
-  }, [page, paperSort, fetchPapers]);
+    fetchPapers(page, pageSize, searchQuery);
+  }, [page, pageSize, paperSort, fetchPapers]);
 
   const columns: ColumnsType<Paper> = [
     {
@@ -251,13 +252,21 @@ export default function PapersPage() {
               </Popconfirm>
             )}
             <Input.Search
-              placeholder="搜索论文..."
+              placeholder="搜索论文标题..."
               prefix={<SearchOutlined />}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onSearch={() => fetchPapers(1)}
+              onSearch={(v) => {
+                setPage(1);
+                fetchPapers(1, pageSize, v);
+              }}
               style={{ width: 300 }}
               allowClear
+              onClear={() => {
+                setSearchQuery("");
+                setPage(1);
+                fetchPapers(1, pageSize, "");
+              }}
             />
           </Space>
         }
@@ -275,11 +284,14 @@ export default function PapersPage() {
           pagination={{
             current: page,
             total: papersTotal,
-            pageSize: 20,
+            pageSize: pageSize,
+            showSizeChanger: true,
+            pageSizeOptions: [10, 20, 50, 100],
             showTotal: (t) => `共 ${t} 篇`,
           }}
           onChange={(pag, _filters, sorter) => {
             const newPage = pag.current ?? 1;
+            const newSize = pag.pageSize ?? pageSize;
             const s = Array.isArray(sorter) ? sorter[0] : sorter;
             if (s?.field && s?.order) {
               const field = String(s.field);
@@ -287,6 +299,7 @@ export default function PapersPage() {
               setPaperSort(field, order);
             }
             setPage(newPage);
+            setPageSize(newSize);
           }}
           locale={{ emptyText: <Empty description="暂无论文，请先启动爬取任务" /> }}
         />
