@@ -3,6 +3,7 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
+import httpx
 import yaml
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -14,6 +15,10 @@ from app.services.crawlers.openalex_crawler import OpenAlexCrawler
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+# PDF 存储目录
+PDF_STORAGE_DIR = Path(__file__).resolve().parent.parent.parent.parent / "storage" / "papers"
+PDF_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 # 活跃的爬虫实例，支持外部取消
 _active_crawlers: dict[str, BaseCrawler] = {}
@@ -124,7 +129,46 @@ def compute_impact_score(paper: PaperMeta) -> float:
     return round(score, 2)
 
 
-async def import_paper_meta(db: AsyncSession, meta: PaperMeta) -> Paper | None:
+async def download_pdf(pdf_url: str, paper_id: str) -> str | None:
+    """下载论文 PDF 文件，返回保存路径或 None"""
+    if not pdf_url:
+        return None
+
+    # 构建文件名（使用 paper_id 避免冲突）
+    filename = f"{paper_id}.pdf"
+    filepath = PDF_STORAGE_DIR / filename
+
+    if filepath.exists():
+        return str(filepath.relative_to(PDF_STORAGE_DIR.parent.parent))
+
+    try:
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(connect=10.0, read=60.0),
+            follow_redirects=True,
+        ) as client:
+            resp = await client.get(pdf_url)
+            if resp.status_code == 200 and len(resp.content) > 1000:
+                content_type = resp.headers.get("content-type", "")
+                if "pdf" in content_type or resp.content[:5] == b"%PDF-":
+                    filepath.write_bytes(resp.content)
+                    rel_path = str(filepath.relative_to(PDF_STORAGE_DIR.parent.parent))
+                    logger.info(f"  📄 PDF 下载成功: {rel_path} ({len(resp.content) // 1024}KB)")
+                    return rel_path
+                else:
+                    logger.debug(f"  ⚠️ PDF URL 返回非 PDF 内容: {content_type}")
+            else:
+                logger.debug(
+                    f"  ⚠️ PDF 下载失败: status={resp.status_code} size={len(resp.content)}"
+                )
+    except Exception as e:
+        logger.debug(f"  ⚠️ PDF 下载异常: {e}")
+
+    return None
+
+
+async def import_paper_meta(
+    db: AsyncSession, meta: PaperMeta, pdf_path: str | None = None
+) -> Paper | None:
     """将爬取到的论文元数据导入数据库，返回 Paper 对象或 None（已存在/无效）"""
     # 基本有效性检查
     if not meta.title or len(meta.title.strip()) < 3:
@@ -145,8 +189,9 @@ async def import_paper_meta(db: AsyncSession, meta: PaperMeta) -> Paper | None:
                 logger.debug(f"Paper already exists: {meta.title[:50]} ({field_name}={value})")
                 return None
 
+    paper_id = gen_id()
     paper = Paper(
-        id=gen_id(),
+        id=paper_id,
         title=meta.title.strip(),
         abstract=meta.abstract,
         year=meta.year,
@@ -155,6 +200,7 @@ async def import_paper_meta(db: AsyncSession, meta: PaperMeta) -> Paper | None:
         arxiv_id=meta.arxiv_id,
         s2_id=meta.s2_id,
         url=meta.url,
+        pdf_path=pdf_path,
         citation_count=meta.citation_count,
         influential_citation_count=meta.influential_citation_count,
         impact_score=compute_impact_score(meta),
@@ -334,6 +380,7 @@ async def confirm_crawl_task(task_id: str, selected_indices: list[int] | None, d
 
     imported_papers = []
     skipped = 0
+    pdf_downloaded = 0
     for meta_dict in candidates:
         try:
             meta = PaperMeta(
@@ -352,13 +399,27 @@ async def confirm_crawl_task(task_id: str, selected_indices: list[int] | None, d
                 references=meta_dict.get("references", []),
                 fields_of_study=meta_dict.get("fields_of_study", []),
             )
-            paper = await import_paper_meta(db, meta)
+
+            # 下载 PDF（如果有可用的 URL）
+            pdf_path = None
+            if meta.pdf_url:
+                temp_id = gen_id()
+                pdf_path = await download_pdf(meta.pdf_url, temp_id)
+                if pdf_path:
+                    pdf_downloaded += 1
+
+            paper = await import_paper_meta(db, meta, pdf_path=pdf_path)
             if paper:
                 imported_papers.append((paper, meta))
                 task.imported += 1
-                logger.info(f"  ✅ 入库: [{meta.citation_count}] {meta.title[:60]}")
+                pdf_tag = " 📄" if pdf_path else ""
+                logger.info(f"  ✅ 入库{pdf_tag}: [{meta.citation_count}] {meta.title[:60]}")
             else:
                 skipped += 1
+                # 如果论文已存在但下载了 PDF，删除多余的 PDF 文件
+                if pdf_path:
+                    pdf_file = PDF_STORAGE_DIR.parent.parent / pdf_path
+                    pdf_file.unlink(missing_ok=True)
                 logger.debug(f"  ⏭️ 跳过(已存在): {meta.title[:60]}")
         except Exception as e:
             logger.error(f"  ❌ 导入失败 '{meta_dict.get('title', '?')[:50]}': {e}")
@@ -390,13 +451,14 @@ async def confirm_crawl_task(task_id: str, selected_indices: list[int] | None, d
         f"耗时 {elapsed:.1f}s | "
         f"搜索={task.searched} 候选={task.candidates} "
         f"入库={task.imported} 跳过={skipped} 失败={task.failed} "
-        f"新建关系={relations_created}"
+        f"PDF={pdf_downloaded} 新建关系={relations_created}"
     )
 
     return {
         "imported": task.imported,
         "skipped": skipped,
         "failed": task.failed,
+        "pdf_downloaded": pdf_downloaded,
         "relations": relations_created,
     }
 

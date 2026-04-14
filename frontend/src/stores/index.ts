@@ -45,7 +45,7 @@ export const useStore = create<AppState>((set, get) => ({
   papers: [],
   papersTotal: 0,
   papersLoading: false,
-  paperSort: { field: "impact_score", order: "desc" },
+  paperSort: { field: "created_at", order: "desc" },
 
   fetchPapers: async (page = 1, size = 20) => {
     set({ papersLoading: true });
