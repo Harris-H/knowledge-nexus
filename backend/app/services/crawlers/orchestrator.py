@@ -143,7 +143,7 @@ async def download_pdf(pdf_url: str, paper_id: str) -> str | None:
 
     try:
         async with httpx.AsyncClient(
-            timeout=httpx.Timeout(connect=10.0, read=60.0),
+            timeout=httpx.Timeout(60.0, connect=10.0),
             follow_redirects=True,
         ) as client:
             resp = await client.get(pdf_url)
@@ -155,13 +155,11 @@ async def download_pdf(pdf_url: str, paper_id: str) -> str | None:
                     logger.info(f"  📄 PDF 下载成功: {rel_path} ({len(resp.content) // 1024}KB)")
                     return rel_path
                 else:
-                    logger.debug(f"  ⚠️ PDF URL 返回非 PDF 内容: {content_type}")
+                    logger.info(f"  ⚠️ PDF URL 返回非 PDF 内容: {content_type}")
             else:
-                logger.debug(
-                    f"  ⚠️ PDF 下载失败: status={resp.status_code} size={len(resp.content)}"
-                )
+                logger.info(f"  ⚠️ PDF 下载失败: status={resp.status_code} size={len(resp.content)}")
     except Exception as e:
-        logger.debug(f"  ⚠️ PDF 下载异常: {e}")
+        logger.info(f"  ⚠️ PDF 下载异常: {e}")
 
     return None
 
@@ -403,10 +401,13 @@ async def confirm_crawl_task(task_id: str, selected_indices: list[int] | None, d
             # 下载 PDF（如果有可用的 URL）
             pdf_path = None
             if meta.pdf_url:
+                logger.info(f"  📥 尝试下载 PDF: {meta.pdf_url[:80]}")
                 temp_id = gen_id()
                 pdf_path = await download_pdf(meta.pdf_url, temp_id)
                 if pdf_path:
                     pdf_downloaded += 1
+            else:
+                logger.info(f"  ℹ️ 无 PDF URL: {meta.title[:50]}")
 
             paper = await import_paper_meta(db, meta, pdf_path=pdf_path)
             if paper:
