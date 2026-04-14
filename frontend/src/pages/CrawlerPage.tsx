@@ -653,7 +653,7 @@ export default function CrawlerPage() {
       width: 120,
       render: (_: unknown, r: CrawlTask) => (
         <Space size="small">
-          {["running", "queued"].includes(r.status) && (
+          {["running", "queued", "preview_ready"].includes(r.status) && (
             <Button
               size="small"
               danger

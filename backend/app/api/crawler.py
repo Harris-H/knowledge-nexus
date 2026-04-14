@@ -123,7 +123,7 @@ async def cancel_task(task_id: str, db: AsyncSession = Depends(get_db)):
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
 
-    if task.status not in ("queued", "running"):
+    if task.status not in ("queued", "running", "preview_ready"):
         raise HTTPException(status_code=400, detail=f"任务状态为 {task.status}，无法取消")
 
     cancelled = cancel_crawl_task(task_id)
