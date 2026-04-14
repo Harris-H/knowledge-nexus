@@ -117,9 +117,11 @@ export const useStore = create<AppState>((set, get) => ({
       try {
         const { data } = await crawlerApi.getTask(taskId);
         set({ activeCrawlTask: data });
-        if (["completed", "failed", "cancelled"].includes(data.status)) {
+        if (["completed", "failed", "cancelled", "preview_ready"].includes(data.status)) {
           get().stopPolling();
-          get().fetchPapers();
+          if (data.status === "completed") {
+            get().fetchPapers();
+          }
           get().fetchCrawlTasks();
         }
       } catch {

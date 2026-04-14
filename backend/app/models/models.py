@@ -185,3 +185,4 @@ class CrawlTask(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    candidates_data: Mapped[str | None] = mapped_column(Text)

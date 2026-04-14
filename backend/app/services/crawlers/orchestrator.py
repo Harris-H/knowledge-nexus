@@ -268,7 +268,6 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
         all_papers.sort(key=lambda p: compute_impact_score(p), reverse=True)
         candidates = all_papers[: task.max_papers]
         task.candidates = len(candidates)
-        await db.commit()
 
         logger.info(
             f"📊 [Task {task_id}] 搜索完成: API返回 {task.searched} 篇, "
@@ -283,58 +282,20 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
                 f"  📉 引用量最低: [{candidates[-1].citation_count}] {candidates[-1].title[:60]}"
             )
 
-        # 导入数据库
-        imported_papers = []
-        skipped = 0
+        # 序列化候选论文数据，存入 task 供前端预览
+        import json
+        from dataclasses import asdict
+
+        candidates_json = []
         for meta in candidates:
-            if crawler.is_cancelled:
-                break
-            try:
-                paper = await import_paper_meta(db, meta)
-                if paper:
-                    imported_papers.append((paper, meta))
-                    task.imported += 1
-                    logger.info(f"  ✅ 入库: [{meta.citation_count}] {meta.title[:60]}")
-                else:
-                    skipped += 1
-                    logger.debug(f"  ⏭️ 跳过(已存在): {meta.title[:60]}")
-            except Exception as e:
-                logger.error(f"  ❌ 导入失败 '{meta.title[:50]}': {e}\n{traceback.format_exc()}")
-                task.failed += 1
-
-            if (task.imported + task.failed) % 10 == 0:
-                await db.commit()
-
+            d = asdict(meta)
+            d["impact_score"] = compute_impact_score(meta)
+            candidates_json.append(d)
+        task.candidates_data = json.dumps(candidates_json, ensure_ascii=False)
+        task.status = "preview_ready"
         await db.commit()
 
-        # 建立引用关系
-        relations_created = 0
-        for paper, meta in imported_papers:
-            if crawler.is_cancelled:
-                break
-            try:
-                count = await build_citation_relations(db, paper, meta.references)
-                relations_created += count
-            except Exception as e:
-                logger.warning(f"Failed to build relations for {paper.id}: {e}")
-        await db.commit()
-
-        if crawler.is_cancelled:
-            task.status = "cancelled"
-        else:
-            task.status = "completed"
-
-        task.finished_at = datetime.utcnow()
-        elapsed = (task.finished_at - task.started_at).total_seconds()
-
-        status_emoji = "✅" if task.status == "completed" else "⏹️"
-        logger.info(
-            f"{status_emoji} [Task {task_id}] {task.status.upper()} | "
-            f"耗时 {elapsed:.1f}s | "
-            f"搜索={task.searched} 候选={task.candidates} "
-            f"入库={task.imported} 跳过={skipped} 失败={task.failed} "
-            f"新建关系={relations_created}"
-        )
+        logger.info(f"👁️ [Task {task_id}] 候选论文已准备就绪，等待用户确认入库")
 
     except Exception as e:
         logger.error(f"❌ [Task {task_id}] 异常终止: {e}\n{traceback.format_exc()}")
@@ -343,6 +304,101 @@ async def run_crawl_task(task_id: str, db: AsyncSession):
     finally:
         _active_crawlers.pop(task_id, None)
         await db.commit()
+
+
+async def confirm_crawl_task(task_id: str, selected_indices: list[int] | None, db: AsyncSession):
+    """用户确认入库：将选中的候选论文导入数据库"""
+    import json
+
+    result = await db.execute(select(CrawlTask).where(CrawlTask.id == task_id))
+    task = result.scalar_one_or_none()
+    if not task:
+        raise ValueError(f"Task not found: {task_id}")
+    if task.status != "preview_ready":
+        raise ValueError(f"Task {task_id} is not in preview_ready status (current: {task.status})")
+    if not task.candidates_data:
+        raise ValueError(f"Task {task_id} has no candidates data")
+
+    all_candidates = json.loads(task.candidates_data)
+
+    # If selected_indices is None, import all; otherwise import only selected
+    if selected_indices is not None:
+        candidates = [all_candidates[i] for i in selected_indices if 0 <= i < len(all_candidates)]
+    else:
+        candidates = all_candidates
+
+    task.status = "running"
+    await db.commit()
+
+    logger.info(f"📥 [Task {task_id}] 开始导入 {len(candidates)}/{len(all_candidates)} 篇论文")
+
+    imported_papers = []
+    skipped = 0
+    for meta_dict in candidates:
+        try:
+            meta = PaperMeta(
+                title=meta_dict["title"],
+                abstract=meta_dict.get("abstract"),
+                authors=meta_dict.get("authors", []),
+                year=meta_dict.get("year"),
+                venue=meta_dict.get("venue"),
+                doi=meta_dict.get("doi"),
+                arxiv_id=meta_dict.get("arxiv_id"),
+                s2_id=meta_dict.get("s2_id"),
+                url=meta_dict.get("url"),
+                pdf_url=meta_dict.get("pdf_url"),
+                citation_count=meta_dict.get("citation_count", 0),
+                influential_citation_count=meta_dict.get("influential_citation_count", 0),
+                references=meta_dict.get("references", []),
+                fields_of_study=meta_dict.get("fields_of_study", []),
+            )
+            paper = await import_paper_meta(db, meta)
+            if paper:
+                imported_papers.append((paper, meta))
+                task.imported += 1
+                logger.info(f"  ✅ 入库: [{meta.citation_count}] {meta.title[:60]}")
+            else:
+                skipped += 1
+                logger.debug(f"  ⏭️ 跳过(已存在): {meta.title[:60]}")
+        except Exception as e:
+            logger.error(f"  ❌ 导入失败 '{meta_dict.get('title', '?')[:50]}': {e}")
+            task.failed += 1
+
+        if (task.imported + task.failed) % 10 == 0:
+            await db.commit()
+
+    await db.commit()
+
+    # 建立引用关系
+    relations_created = 0
+    for paper, meta in imported_papers:
+        try:
+            count = await build_citation_relations(db, paper, meta.references)
+            relations_created += count
+        except Exception as e:
+            logger.warning(f"Failed to build relations for {paper.id}: {e}")
+    await db.commit()
+
+    task.status = "completed"
+    task.candidates_data = None  # 清理临时数据
+    task.finished_at = datetime.utcnow()
+    elapsed = (task.finished_at - task.started_at).total_seconds()
+    await db.commit()
+
+    logger.info(
+        f"✅ [Task {task_id}] COMPLETED | "
+        f"耗时 {elapsed:.1f}s | "
+        f"搜索={task.searched} 候选={task.candidates} "
+        f"入库={task.imported} 跳过={skipped} 失败={task.failed} "
+        f"新建关系={relations_created}"
+    )
+
+    return {
+        "imported": task.imported,
+        "skipped": skipped,
+        "failed": task.failed,
+        "relations": relations_created,
+    }
 
 
 # ──────────────────────────────────────────────

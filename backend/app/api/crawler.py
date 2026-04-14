@@ -11,6 +11,7 @@ from app.schemas.schemas import CrawlRequest, CrawlTaskResponse
 from app.services.crawlers.orchestrator import (
     run_crawl_task,
     cancel_crawl_task,
+    confirm_crawl_task,
 )
 from app.services.crawlers.openalex_crawler import OpenAlexCrawler
 
@@ -24,6 +25,7 @@ _CRAWL_TASKS_EXPECTED_COLUMNS: dict[str, str] = {
     "author_id": "VARCHAR(100)",
     "institution_id": "VARCHAR(100)",
     "preset_name": "VARCHAR(100)",
+    "candidates_data": "TEXT",
 }
 
 
@@ -140,6 +142,44 @@ async def get_crawl_task(task_id: str, db: AsyncSession = Depends(get_db)):
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
     return CrawlTaskResponse.model_validate(task)
+
+
+@router.get("/tasks/{task_id}/candidates")
+async def get_task_candidates(task_id: str, db: AsyncSession = Depends(get_db)):
+    """获取爬取任务的候选论文列表（预览用）"""
+    import json
+
+    result = await db.execute(select(CrawlTask).where(CrawlTask.id == task_id))
+    task = result.scalar_one_or_none()
+    if not task:
+        raise HTTPException(status_code=404, detail="任务不存在")
+    if task.status != "preview_ready":
+        raise HTTPException(
+            status_code=400, detail=f"任务状态不是 preview_ready (当前: {task.status})"
+        )
+    if not task.candidates_data:
+        return []
+    return json.loads(task.candidates_data)
+
+
+@router.post("/tasks/{task_id}/confirm")
+async def confirm_task_import(
+    task_id: str,
+    body: dict | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """确认入库：将选中的候选论文导入数据库
+
+    body: {"selected_indices": [0, 1, 3, ...]} 或 null/空表示全部导入
+    """
+    selected = None
+    if body and "selected_indices" in body:
+        selected = body["selected_indices"]
+    try:
+        result = await confirm_crawl_task(task_id, selected, db)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/tasks", response_model=list[CrawlTaskResponse])

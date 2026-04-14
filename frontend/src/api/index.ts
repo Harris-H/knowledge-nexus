@@ -122,12 +122,31 @@ export interface InstitutionResult {
   cited_by_count: number;
 }
 
+export interface CandidatePaper {
+  title: string;
+  abstract?: string;
+  authors: string[];
+  year?: number;
+  venue?: string;
+  doi?: string;
+  arxiv_id?: string;
+  url?: string;
+  citation_count: number;
+  influential_citation_count: number;
+  impact_score: number;
+  fields_of_study: string[];
+}
+
 export const crawlerApi = {
   start: (data: Record<string, unknown>) =>
     api.post<CrawlTask>("/crawler/start", data),
   getTask: (id: string) => api.get<CrawlTask>(`/crawler/tasks/${id}`),
   listTasks: () => api.get<CrawlTask[]>("/crawler/tasks"),
   cancelTask: (id: string) => api.post(`/crawler/tasks/${id}/cancel`),
+  getCandidates: (id: string) =>
+    api.get<CandidatePaper[]>(`/crawler/tasks/${id}/candidates`),
+  confirmImport: (id: string, selectedIndices?: number[]) =>
+    api.post(`/crawler/tasks/${id}/confirm`, selectedIndices ? { selected_indices: selectedIndices } : {}),
   // Elite Profile APIs
   listPresets: () =>
     api.get<Record<string, ElitePreset>>("/crawler/elite/presets"),

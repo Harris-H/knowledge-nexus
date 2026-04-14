@@ -18,6 +18,8 @@ import {
   Input,
   Descriptions,
   Spin,
+  Modal,
+  Tooltip,
 } from "antd";
 import {
   PlayCircleOutlined,
@@ -26,6 +28,8 @@ import {
   UserOutlined,
   BankOutlined,
   StarOutlined,
+  CheckCircleOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import { useStore } from "../stores";
 import { crawlerApi } from "../api";
@@ -34,6 +38,7 @@ import type {
   ElitePreset,
   AuthorResult,
   InstitutionResult,
+  CandidatePaper,
 } from "../api";
 
 const SUBDOMAIN_OPTIONS = [
@@ -55,6 +60,7 @@ const SOURCE_OPTIONS = [
 const STATUS_MAP: Record<string, { color: string; label: string }> = {
   queued: { color: "default", label: "排队中" },
   running: { color: "processing", label: "运行中" },
+  preview_ready: { color: "warning", label: "待确认" },
   completed: { color: "success", label: "已完成" },
   failed: { color: "error", label: "失败" },
   cancelled: { color: "warning", label: "已取消" },
@@ -496,13 +502,63 @@ function EliteForm({
 
 // ── Main Page ──
 export default function CrawlerPage() {
-  const { crawlTasks, activeCrawlTask, fetchCrawlTasks, startCrawl } =
+  const { crawlTasks, activeCrawlTask, fetchCrawlTasks, startCrawl, fetchPapers } =
     useStore();
   const [starting, setStarting] = useState(false);
+
+  // Preview modal state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewTask, setPreviewTask] = useState<CrawlTask | null>(null);
+  const [candidates, setCandidates] = useState<CandidatePaper[]>([]);
+  const [selectedKeys, setSelectedKeys] = useState<number[]>([]);
+  const [loadingCandidates, setLoadingCandidates] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     fetchCrawlTasks();
   }, [fetchCrawlTasks]);
+
+  // Auto-open preview when task reaches preview_ready
+  useEffect(() => {
+    if (activeCrawlTask?.status === "preview_ready" && !previewOpen) {
+      openPreview(activeCrawlTask);
+    }
+  }, [activeCrawlTask?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const openPreview = async (task: CrawlTask) => {
+    setPreviewTask(task);
+    setPreviewOpen(true);
+    setLoadingCandidates(true);
+    try {
+      const { data } = await crawlerApi.getCandidates(task.id);
+      setCandidates(data);
+      setSelectedKeys(data.map((_: CandidatePaper, i: number) => i));
+    } catch {
+      message.error("获取候选论文失败");
+    } finally {
+      setLoadingCandidates(false);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!previewTask) return;
+    setConfirming(true);
+    try {
+      const indices = selectedKeys.length === candidates.length ? undefined : selectedKeys;
+      await crawlerApi.confirmImport(previewTask.id, indices);
+      message.success(`成功入库 ${selectedKeys.length} 篇论文！`);
+      setPreviewOpen(false);
+      setCandidates([]);
+      setSelectedKeys([]);
+      setPreviewTask(null);
+      fetchCrawlTasks();
+      fetchPapers();
+    } catch {
+      message.error("入库失败");
+    } finally {
+      setConfirming(false);
+    }
+  };
 
   const handleStart = async (values: Record<string, unknown>) => {
     try {
@@ -594,18 +650,85 @@ export default function CrawlerPage() {
     },
     {
       title: "操作",
+      width: 120,
+      render: (_: unknown, r: CrawlTask) => (
+        <Space size="small">
+          {["running", "queued"].includes(r.status) && (
+            <Button
+              size="small"
+              danger
+              icon={<StopOutlined />}
+              onClick={() => handleCancel(r.id)}
+            >
+              取消
+            </Button>
+          )}
+          {r.status === "preview_ready" && (
+            <Button
+              size="small"
+              type="primary"
+              icon={<EyeOutlined />}
+              onClick={() => openPreview(r)}
+            >
+              预览
+            </Button>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
+  // Preview modal columns
+  const previewColumns = [
+    {
+      title: "评分",
+      dataIndex: "impact_score",
+      width: 70,
+      sorter: (a: CandidatePaper, b: CandidatePaper) => a.impact_score - b.impact_score,
+      defaultSortOrder: "descend" as const,
+      render: (v: number) => <Tag color={v >= 60 ? "red" : v >= 30 ? "orange" : "default"}>{v.toFixed(1)}</Tag>,
+    },
+    {
+      title: "论文标题",
+      dataIndex: "title",
+      ellipsis: true,
+      render: (t: string, r: CandidatePaper) => (
+        <Tooltip title={r.abstract?.slice(0, 300)}>
+          <span>{t}</span>
+        </Tooltip>
+      ),
+    },
+    {
+      title: "年份",
+      dataIndex: "year",
+      width: 70,
+    },
+    {
+      title: "引用",
+      dataIndex: "citation_count",
       width: 80,
-      render: (_: unknown, r: CrawlTask) =>
-        ["running", "queued"].includes(r.status) ? (
-          <Button
-            size="small"
-            danger
-            icon={<StopOutlined />}
-            onClick={() => handleCancel(r.id)}
-          >
-            取消
-          </Button>
-        ) : null,
+      sorter: (a: CandidatePaper, b: CandidatePaper) => a.citation_count - b.citation_count,
+      render: (v: number) => v.toLocaleString(),
+    },
+    {
+      title: "领域",
+      dataIndex: "fields_of_study",
+      width: 150,
+      ellipsis: true,
+      render: (v: string[]) => v?.slice(0, 2).join(", ") || "-",
+    },
+    {
+      title: "会议/期刊",
+      dataIndex: "venue",
+      width: 120,
+      ellipsis: true,
+    },
+    {
+      title: "作者",
+      dataIndex: "authors",
+      width: 150,
+      ellipsis: true,
+      render: (v: string[]) => v?.slice(0, 3).join(", ") || "-",
     },
   ];
 
@@ -684,6 +807,59 @@ export default function CrawlerPage() {
           pagination={{ pageSize: 10 }}
         />
       </Card>
+
+      {/* Preview Modal */}
+      <Modal
+        title={
+          <Space>
+            <EyeOutlined />
+            候选论文预览
+            {candidates.length > 0 && (
+              <Tag color="blue">
+                共 {candidates.length} 篇 / 已选 {selectedKeys.length} 篇
+              </Tag>
+            )}
+          </Space>
+        }
+        open={previewOpen}
+        onCancel={() => setPreviewOpen(false)}
+        width="90%"
+        style={{ top: 20 }}
+        footer={[
+          <Button key="cancel" onClick={() => setPreviewOpen(false)}>
+            取消
+          </Button>,
+          <Button
+            key="confirm"
+            type="primary"
+            icon={<CheckCircleOutlined />}
+            loading={confirming}
+            disabled={selectedKeys.length === 0}
+            onClick={handleConfirmImport}
+          >
+            确认入库（{selectedKeys.length} 篇）
+          </Button>,
+        ]}
+      >
+        <Table
+          loading={loadingCandidates}
+          columns={previewColumns}
+          dataSource={candidates}
+          rowKey={(_record, index) => index!}
+          size="small"
+          scroll={{ y: 500 }}
+          pagination={false}
+          rowSelection={{
+            selectedRowKeys: selectedKeys,
+            onChange: (keys) => setSelectedKeys(keys as number[]),
+            selections: [
+              Table.SELECTION_ALL,
+              Table.SELECTION_NONE,
+              Table.SELECTION_INVERT,
+            ],
+          }}
+        />
+      </Modal>
     </div>
   );
 }
