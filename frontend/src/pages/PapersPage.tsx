@@ -151,9 +151,19 @@ export default function PapersPage() {
     {
       title: "入库时间",
       dataIndex: "created_at",
-      width: 100,
+      width: 160,
       sorter: true,
-      render: (v: string) => (v ? new Date(v).toLocaleDateString("zh-CN") : "-"),
+      render: (v: string) =>
+        v
+          ? new Date(v).toLocaleString("zh-CN", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZone: "Asia/Shanghai",
+            })
+          : "-",
     },
     {
       title: "操作",

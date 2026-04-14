@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 
 
 # ---- Paper ----
@@ -51,6 +51,13 @@ class PaperResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, v: datetime) -> str:
+        """Mark naive datetime as UTC so frontend can convert to local timezone."""
+        if v and v.tzinfo is None:
+            v = v.replace(tzinfo=timezone.utc)
+        return v.isoformat() if v else ""
 
 
 class PaperList(BaseModel):
@@ -128,6 +135,12 @@ class CrawlTaskResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    @field_serializer("created_at")
+    def serialize_created_at(self, v: datetime) -> str:
+        if v and v.tzinfo is None:
+            v = v.replace(tzinfo=timezone.utc)
+        return v.isoformat() if v else ""
+
 
 # ---- Search ----
 
@@ -183,6 +196,12 @@ class KnowledgeNodeResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, v: datetime) -> str:
+        if v and v.tzinfo is None:
+            v = v.replace(tzinfo=timezone.utc)
+        return v.isoformat() if v else ""
 
 
 class KnowledgeNodeList(BaseModel):

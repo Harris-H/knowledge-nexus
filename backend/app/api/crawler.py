@@ -185,12 +185,24 @@ async def list_elite_presets():
 
 @router.get("/elite/authors/search")
 async def search_authors(q: str):
-    """搜索学者（按姓名，返回 OpenAlex 匹配结果）"""
+    """搜索学者（按姓名，返回 OpenAlex 匹配结果，YAML 中的 affiliation 覆盖 OpenAlex 错误数据）"""
     if not q or len(q.strip()) < 2:
         raise HTTPException(status_code=400, detail="搜索关键词至少 2 个字符")
 
+    from app.services.crawlers.orchestrator import _load_elite_profiles
+
     async with OpenAlexCrawler(rate_limit=0.3) as crawler:
         results = await crawler.resolve_author_id(q.strip())
+
+    # Override affiliation with curated data from elite_profiles.yaml
+    profiles = _load_elite_profiles()
+    affiliation_overrides = {
+        r["id"]: r["affiliation"] for r in profiles.get("researchers", []) if r.get("affiliation")
+    }
+    for r in results:
+        if r["id"] in affiliation_overrides:
+            r["affiliation"] = affiliation_overrides[r["id"]]
+
     return results
 
 
