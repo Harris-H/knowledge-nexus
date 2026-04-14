@@ -23,7 +23,7 @@ build/
 *.egg-info/
 
 # Storage (large files)
-storage/papers/*.pdf
+**/storage/papers/*.pdf
 *.db
 
 # Docker volumes
